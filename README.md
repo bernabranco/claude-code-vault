@@ -2,7 +2,7 @@
 
 # claude-vault
 
-**A markdown knowledge vault designed for Claude — not adapted to Claude.**
+**A markdown knowledge vault designed for Claude.**
 
 [![CI](https://github.com/bernabranco/claude-vault/actions/workflows/ci.yml/badge.svg)](https://github.com/bernabranco/claude-vault/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
