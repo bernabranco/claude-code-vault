@@ -78,10 +78,13 @@ The vault is just markdown — Claude reads files directly, no backend required 
 npm install
 cd web && npm install && cd ..
 
-# Run backend + UI (optional, for browsing)
-node lib/server.js                # http://localhost:4001
-cd web && npm run dev              # http://localhost:5173 (dev mode)
+# Run backend + UI — indexes ./vault in the current directory by default
+node lib/server.js                               # http://localhost:4001
+VAULT_DIR=./path/to/your/vault node lib/server.js   # point at any folder
+cd web && npm run dev                            # http://localhost:5173 (dev mode)
 ```
+
+Run from the root of your repo (the one where `claude-code-vault init` created `vault/<your-project>/`) and the viewer picks it up automatically. Use `VAULT_DIR` to point at a vault elsewhere.
 
 <p align="center">
   <img src="assets/print1.jpg" alt="Note reader view showing the vault conventions document, with folder tree on the left and rendered markdown in the middle" width="100%" />
