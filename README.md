@@ -22,9 +22,17 @@
 
 Most PKM tools (Obsidian, Logseq, Notion) were built for humans writing notes; LLM features are bolted on as plugins. `claude-code-vault` starts from the other direction: **what would a knowledge base look like if an LLM agent was the primary consumer?**
 
+The name points at the first-class integration (Claude Code + MCP), but the vault itself is plain markdown with YAML frontmatter and wiki-links. Any [MCP-compatible](https://modelcontextprotocol.io) client can load the same tool surface, and any agent that can read files can use the vault directly — no Claude required. This repo just ships the Claude Code wiring out of the box.
+
 Browse the demo vault shipped with this repo at [`vault/tempo/`](vault/tempo/) — a fake focus-timer SaaS with ADRs, features, gotchas, market research, and pricing, all wiki-linked into a real graph.
 
 > ⚠️ **Status: early, personal tool.** See the [roadmap](#roadmap) for what's built vs. planned.
+
+<p align="center">
+  <img src="assets/print2.jpg" alt="claude-code-vault web UI showing a force-directed graph of wiki-linked notes, with one note selected and its frontmatter displayed in the right sidebar" width="100%" />
+  <br />
+  <sub><em>The demo vault rendered as a graph — every wiki-link becomes an edge, every note a node. Click to read.</em></sub>
+</p>
 
 ## How it looks in practice
 
@@ -74,6 +82,12 @@ cd web && npm install && cd ..
 node lib/server.js                # http://localhost:4001
 cd web && npm run dev              # http://localhost:5173 (dev mode)
 ```
+
+<p align="center">
+  <img src="assets/print1.jpg" alt="Note reader view showing the vault conventions document, with folder tree on the left and rendered markdown in the middle" width="100%" />
+  <br />
+  <sub><em>Reader view — folder tree on the left, rendered markdown in the middle, frontmatter + tags on the right.</em></sub>
+</p>
 
 ## Bootstrap a vault in any repo
 

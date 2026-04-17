@@ -1,4 +1,4 @@
-# Claude Vault
+# Claude Code Vault
 
 Local-first markdown vault for giving Claude persistent context across sessions.
 
