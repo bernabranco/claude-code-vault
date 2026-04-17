@@ -1,16 +1,16 @@
 {
   "name": "claude-code-vault",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Local-first markdown knowledge vault for Claude Code — semantic search, graph-aware context, and MCP integration",
   "main": "index.js",
   "type": "module",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/bernabranco/claude-vault.git"
+    "url": "git+https://github.com/bernabranco/claude-code-vault.git"
   },
-  "homepage": "https://github.com/bernabranco/claude-vault#readme",
+  "homepage": "https://github.com/bernabranco/claude-code-vault#readme",
   "bugs": {
-    "url": "https://github.com/bernabranco/claude-vault/issues"
+    "url": "https://github.com/bernabranco/claude-code-vault/issues"
   },
   "files": [
     "index.js",

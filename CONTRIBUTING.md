@@ -5,8 +5,8 @@ Thanks for taking the time to contribute. This is an early project — small, fo
 ## Dev setup
 
 ```bash
-git clone https://github.com/bernabranco/claude-vault.git
-cd claude-vault
+git clone https://github.com/bernabranco/claude-code-vault.git
+cd claude-code-vault
 npm install
 cd web && npm install && cd ..
 ```

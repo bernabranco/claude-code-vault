@@ -5,7 +5,7 @@
 **A markdown knowledge vault designed for Claude.**
 
 [![npm version](https://img.shields.io/npm/v/claude-code-vault.svg)](https://www.npmjs.com/package/claude-code-vault)
-[![CI](https://github.com/bernabranco/claude-vault/actions/workflows/ci.yml/badge.svg)](https://github.com/bernabranco/claude-vault/actions/workflows/ci.yml)
+[![CI](https://github.com/bernabranco/claude-code-vault/actions/workflows/ci.yml/badge.svg)](https://github.com/bernabranco/claude-code-vault/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 [![Node](https://img.shields.io/badge/node-%3E%3D20-brightgreen)](package.json)
 [![MCP](https://img.shields.io/badge/MCP-compatible-8A2BE2)](https://modelcontextprotocol.io)
@@ -150,9 +150,9 @@ node index.js search-with-context "tab throttling" --limit 3 --depth 2
 - [x] **Graph-aware context** — `vault_read_with_context` and `vault_search_chunks_with_context` return ranked neighbors with snippets
 - [x] **`claude-code-vault init`** — one command bootstraps a vault, `.mcp.json`, and `.gitignore` in any repo
 - [x] **[npm published](https://www.npmjs.com/package/claude-code-vault)** — install via `npx claude-code-vault init`
-- [ ] **[Hybrid search](https://github.com/bernabranco/claude-vault/issues/4)** — fuse keyword + semantic scores via RRF
-- [ ] **[Reranker](https://github.com/bernabranco/claude-vault/issues/5)** — cross-encoder pass over top-K for precision
-- [ ] **[Public launch polish](https://github.com/bernabranco/claude-vault/issues/3)** — demo GIF, examples, comparison screenshots
+- [ ] **[Hybrid search](https://github.com/bernabranco/claude-code-vault/issues/4)** — fuse keyword + semantic scores via RRF
+- [ ] **[Reranker](https://github.com/bernabranco/claude-code-vault/issues/5)** — cross-encoder pass over top-K for precision
+- [ ] **[Public launch polish](https://github.com/bernabranco/claude-code-vault/issues/3)** — demo GIF, examples, comparison screenshots
 
 ## Contributing
 
