@@ -1,9 +1,21 @@
 {
   "name": "claude-vault",
   "version": "0.1.0",
-  "description": "Local-first markdown knowledge vault for Claude Code — index, search, and export context",
+  "description": "Local-first markdown knowledge vault for Claude Code — semantic search, graph-aware context, and MCP integration",
   "main": "index.js",
   "type": "module",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/bernabranco/claude-vault.git"
+  },
+  "homepage": "https://github.com/bernabranco/claude-vault#readme",
+  "bugs": {
+    "url": "https://github.com/bernabranco/claude-vault/issues"
+  },
+  "files": [
+    "index.js",
+    "lib/"
+  ],
   "scripts": {
     "dev": "concurrently \"node --watch lib/server.js\" \"cd web && npm run dev\"",
     "build": "cd web && npm run build",
@@ -36,10 +48,19 @@
   },
   "keywords": [
     "claude",
+    "claude-code",
+    "mcp",
+    "model-context-protocol",
     "knowledge-management",
+    "knowledge-base",
+    "knowledge-graph",
     "markdown",
     "vault",
-    "obsidian"
+    "rag",
+    "embeddings",
+    "semantic-search",
+    "local-first",
+    "sqlite"
   ],
   "author": "bernabranco",
   "license": "MIT",
