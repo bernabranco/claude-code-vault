@@ -1,0 +1,49 @@
+{
+  "name": "claude-vault",
+  "version": "0.1.0",
+  "description": "Local-first markdown knowledge vault for Claude Code — index, search, and export context",
+  "main": "index.js",
+  "type": "module",
+  "scripts": {
+    "dev": "concurrently \"node --watch lib/server.js\" \"cd web && npm run dev\"",
+    "build": "cd web && npm run build",
+    "start": "node lib/server.js",
+    "mcp": "node lib/mcp.js",
+    "setup": "npm install && cd web && npm install",
+    "cli": "node index.js",
+    "vault:index": "node index.js index",
+    "vault:search": "node index.js search",
+    "vault:export": "node index.js export",
+    "vault:list": "node index.js list"
+  },
+  "bin": {
+    "claude-vault": "index.js",
+    "vault": "index.js"
+  },
+  "dependencies": {
+    "@huggingface/transformers": "^4.1.0",
+    "@modelcontextprotocol/sdk": "^1.29.0",
+    "better-sqlite3": "^12.9.0",
+    "chokidar": "^3.6.0",
+    "commander": "11.1.0",
+    "express": "^4.18.0",
+    "sqlite-vec": "^0.1.9",
+    "zod": "^4.3.6"
+  },
+  "devDependencies": {
+    "concurrently": "^8.0.0",
+    "typescript": "^6.0.3"
+  },
+  "keywords": [
+    "claude",
+    "knowledge-management",
+    "markdown",
+    "vault",
+    "obsidian"
+  ],
+  "author": "bernabranco",
+  "license": "MIT",
+  "engines": {
+    "node": ">=20.0.0"
+  }
+}

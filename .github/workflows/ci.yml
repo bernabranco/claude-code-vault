@@ -1,0 +1,49 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        node-version: [20.x, 22.x]
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Use Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node-version }}
+          cache: "npm"
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Install web dependencies
+        run: cd web && npm install && cd ..
+
+      - name: Type check (CLI)
+        run: npx tsc --noEmit --allowJs --skipLibCheck index.js lib/*.js
+
+      - name: Type check (web)
+        run: cd web && npx tsc --noEmit && cd ..
+
+      - name: Build web
+        run: npm run build
+
+      - name: CLI smoke tests
+        run: |
+          node index.js --version
+          node index.js --help
+          node index.js index
+          node index.js search "architecture" --limit 3
+
+      - name: Lint web (if eslintrc exists)
+        run: cd web && npm run lint 2>/dev/null || echo "No lint script defined"
+        continue-on-error: true

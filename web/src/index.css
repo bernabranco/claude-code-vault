@@ -1,0 +1,297 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", sans-serif;
+  font-size: 16px;
+}
+
+body {
+  background: white;
+  color: #1a1a1a;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  font-weight: 400;
+  line-height: 1.6;
+  letter-spacing: 0.3px;
+}
+
+/* Improve text rendering */
+h1, h2, h3, h4, h5, h6 {
+  font-feature-settings: "kern" 1;
+  text-rendering: optimizeLegibility;
+}
+
+p, li, span, a, button {
+  font-feature-settings: "kern" 1;
+}
+
+/* Custom prose styles for markdown */
+.prose {
+  color: #1a1a1a;
+  font-size: 15px;
+  font-weight: 400;
+  line-height: 1.7;
+}
+
+.prose h1,
+.prose h2,
+.prose h3,
+.prose h4,
+.prose h5,
+.prose h6 {
+  color: #000;
+  font-weight: 600;
+  letter-spacing: -0.5px;
+}
+
+.prose h1 {
+  font-size: 32px;
+  margin-top: 40px;
+  margin-bottom: 20px;
+  line-height: 1.25;
+  font-weight: 700;
+}
+
+.prose h2 {
+  font-size: 26px;
+  margin-top: 32px;
+  margin-bottom: 16px;
+  line-height: 1.3;
+  font-weight: 650;
+}
+
+.prose h3 {
+  font-size: 20px;
+  margin-top: 24px;
+  margin-bottom: 12px;
+  line-height: 1.4;
+  font-weight: 600;
+}
+
+.prose h4 {
+  font-size: 17px;
+  margin-top: 20px;
+  margin-bottom: 10px;
+  line-height: 1.4;
+  font-weight: 600;
+}
+
+.prose p {
+  margin-top: 16px;
+  margin-bottom: 16px;
+  line-height: 1.8;
+  font-size: 15px;
+  color: #2a2a2a;
+  letter-spacing: 0.3px;
+}
+
+.prose ul,
+.prose ol {
+  margin-top: 16px;
+  margin-bottom: 16px;
+  padding-left: 28px;
+}
+
+.prose li {
+  margin-top: 8px;
+  margin-bottom: 8px;
+  color: #2a2a2a;
+  line-height: 1.8;
+  font-size: 15px;
+}
+
+.prose code {
+  background: #f8f8f8;
+  border: 1px solid #e8e8e8;
+  border-radius: 4px;
+  padding: 2px 8px;
+  font-family: "Monaco", "Menlo", "Ubuntu Mono", monospace;
+  font-size: 14px;
+  color: #d73a49;
+  font-weight: 500;
+}
+
+.prose pre {
+  background: #f6f6f6;
+  border: 1px solid #e5e5e5;
+  border-radius: 6px;
+  padding: 14px 16px;
+  overflow-x: auto;
+  margin-top: 20px;
+  margin-bottom: 20px;
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.prose pre code {
+  background: transparent;
+  border: none;
+  padding: 0;
+  color: #1a1a1a;
+  font-weight: 400;
+}
+
+.prose blockquote {
+  border-left: 4px solid #d0d0d0;
+  padding-left: 16px;
+  margin-left: 0;
+  margin-top: 16px;
+  margin-bottom: 16px;
+  color: #555;
+  font-style: italic;
+  font-size: 15px;
+  line-height: 1.7;
+}
+
+.prose a {
+  color: #0066cc;
+  text-decoration: underline;
+  text-decoration-color: #b3d9ff;
+  font-weight: 500;
+}
+
+.prose a:hover {
+  color: #0052a3;
+  text-decoration-color: #0066cc;
+}
+
+.prose strong {
+  color: #000;
+  font-weight: 650;
+}
+
+.prose em {
+  color: #2a2a2a;
+  font-style: italic;
+}
+
+.prose hr {
+  margin-top: 28px;
+  margin-bottom: 28px;
+  border: none;
+  border-top: 1px solid #e5e5e5;
+}
+
+.prose table {
+  margin-top: 20px;
+  margin-bottom: 20px;
+  width: 100%;
+  border-collapse: collapse;
+  border: 1px solid #e5e5e5;
+  font-size: 14px;
+}
+
+.prose th,
+.prose td {
+  border: 1px solid #e5e5e5;
+  padding: 12px 14px;
+  text-align: left;
+  font-size: 14px;
+}
+
+.prose th {
+  background: #f8f8f8;
+  font-weight: 600;
+  color: #000;
+  letter-spacing: 0.3px;
+}
+
+.prose td {
+  color: #2a2a2a;
+  font-weight: 400;
+}
+
+/* Dark mode prose styles - using inline style approach in component */
+.prose[style*="e8e8e8"] {
+  color: #e8e8e8 !important;
+}
+
+.prose[style*="e8e8e8"] h1,
+.prose[style*="e8e8e8"] h2,
+.prose[style*="e8e8e8"] h3,
+.prose[style*="e8e8e8"] h4,
+.prose[style*="e8e8e8"] h5,
+.prose[style*="e8e8e8"] h6 {
+  color: #ffffff !important;
+}
+
+.prose[style*="e8e8e8"] p {
+  color: #e8e8e8 !important;
+}
+
+.prose[style*="e8e8e8"] li {
+  color: #e8e8e8 !important;
+}
+
+.prose[style*="e8e8e8"] span {
+  color: #e8e8e8 !important;
+}
+
+.prose[style*="e8e8e8"] code {
+  background: #2a2a2a !important;
+  border-color: #404040 !important;
+  color: #ff7b72 !important;
+}
+
+.prose[style*="e8e8e8"] pre {
+  background: #1e1e1e !important;
+  border-color: #404040 !important;
+}
+
+.prose[style*="e8e8e8"] pre code {
+  color: #e8e8e8 !important;
+}
+
+.prose[style*="e8e8e8"] blockquote {
+  border-left-color: #555 !important;
+  color: #b0b0b0 !important;
+}
+
+.prose[style*="e8e8e8"] a {
+  color: #58a6ff !important;
+  text-decoration-color: #1f6feb !important;
+}
+
+.prose[style*="e8e8e8"] a:hover {
+  color: #79c0ff !important;
+  text-decoration-color: #58a6ff !important;
+}
+
+.prose[style*="e8e8e8"] strong {
+  color: #ffffff !important;
+}
+
+.prose[style*="e8e8e8"] em {
+  color: #e8e8e8 !important;
+}
+
+.prose[style*="e8e8e8"] hr {
+  border-top-color: #404040 !important;
+}
+
+.prose[style*="e8e8e8"] table {
+  border-color: #404040 !important;
+}
+
+.prose[style*="e8e8e8"] th,
+.prose[style*="e8e8e8"] td {
+  border-color: #404040 !important;
+}
+
+.prose[style*="e8e8e8"] th {
+  background: #2a2a2a !important;
+  color: #ffffff !important;
+}
+
+.prose[style*="e8e8e8"] td {
+  color: #e8e8e8 !important;
+}

@@ -1,0 +1,13 @@
+node_modules/
+.DS_Store
+*.log
+.env
+.env.local
+.vscode/
+.idea/
+dist/
+build/
+.vault-index.json
+.vault-cache/
+.claude/*
+!.claude/agents/
