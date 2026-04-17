@@ -1,6 +1,6 @@
 {
   "mcpServers": {
-    "claude-vault": {
+    "claude-code-vault": {
       "command": "node",
       "args": ["lib/mcp.js"]
     }
