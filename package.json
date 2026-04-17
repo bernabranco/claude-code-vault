@@ -1,5 +1,5 @@
 {
-  "name": "claude-vault",
+  "name": "claude-code-vault",
   "version": "0.1.0",
   "description": "Local-first markdown knowledge vault for Claude Code — semantic search, graph-aware context, and MCP integration",
   "main": "index.js",
@@ -29,8 +29,7 @@
     "vault:list": "node index.js list"
   },
   "bin": {
-    "claude-vault": "index.js",
-    "vault": "index.js"
+    "claude-code-vault": "index.js"
   },
   "dependencies": {
     "@huggingface/transformers": "^4.1.0",
