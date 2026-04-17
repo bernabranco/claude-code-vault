@@ -480,6 +480,7 @@ program
   .description("Start the web server")
   .action(async (options) => {
     process.env.PORT = options.port;
+    process.env.VAULT_DIR = program.opts().vault;
     await import("./lib/server.js");
   });
 
