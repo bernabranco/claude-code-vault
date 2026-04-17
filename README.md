@@ -1,18 +1,29 @@
+<div align="center">
+
 # claude-vault
 
-A markdown knowledge vault designed for Claude — not adapted to Claude.
+**A markdown knowledge vault designed for Claude — not adapted to Claude.**
+
+[![CI](https://github.com/bernabranco/claude-vault/actions/workflows/ci.yml/badge.svg)](https://github.com/bernabranco/claude-vault/actions/workflows/ci.yml)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+[![Node](https://img.shields.io/badge/node-%3E%3D20-brightgreen)](package.json)
+[![MCP](https://img.shields.io/badge/MCP-compatible-8A2BE2)](https://modelcontextprotocol.io)
+
+![Node.js](https://img.shields.io/badge/Node.js-339933?logo=node.js&logoColor=white)
+![SQLite](https://img.shields.io/badge/SQLite-003B57?logo=sqlite&logoColor=white)
+![Hugging Face](https://img.shields.io/badge/🤗%20Transformers.js-FFD21E?logoColor=black)
+![React](https://img.shields.io/badge/React-61DAFB?logo=react&logoColor=black)
+![TypeScript](https://img.shields.io/badge/TypeScript-3178C6?logo=typescript&logoColor=white)
+
+</div>
+
+---
 
 Most PKM tools (Obsidian, Logseq, Notion) were built for humans writing notes; LLM features are bolted on as plugins. `claude-vault` starts from the other direction: **what would a knowledge base look like if an LLM agent was the primary consumer?**
 
-> ⚠️ **Status: early, personal tool.** See the roadmap for what's built vs. planned.
+Browse the demo vault shipped with this repo at [`vault/tempo/`](vault/tempo/) — a fake focus-timer SaaS with ADRs, features, gotchas, market research, and pricing, all wiki-linked into a real graph.
 
-## The Pitch
-
-**Today:** a vault of markdown files Claude reads directly (via MCP tools), with a 3D graph UI for humans to browse.
-
-**Goal:** a vault Claude can *query* — semantic search, graph-aware context, chunk-level retrieval, native MCP tools. A persistent memory layer that plugs into Claude Code in one command.
-
-Browse the demo vault shipped with this repo: [`vault/tempo/`](vault/tempo/) — a fake focus-timer SaaS with ADRs, features, gotchas, market research, and pricing, all wiki-linked into a real graph.
+> ⚠️ **Status: early, personal tool.** See the [roadmap](#roadmap) for what's built vs. planned.
 
 ## How it looks in practice
 
@@ -31,21 +42,6 @@ Claude doesn't want the whole [`gotchas.md`](vault/tempo/technical/architecture/
 `vault_read_with_context("tempo/technical/decisions/adr-001-local-first-sqlite")` returns the ADR **plus** 3 ranked graph neighbors — [`frontend-architecture`](vault/tempo/technical/architecture/frontend-architecture.md), [`focus-sessions`](vault/tempo/technical/features/focus-sessions.md), [`adr-002`](vault/tempo/technical/decisions/adr-002-web-workers-for-timers.md) — each with an intro snippet. One round-trip. Bidirectional edges first, then ranked by how many chunks reference them.
 
 Full tool list is below. `vault_list`, `vault_related`, `vault_search`, and `vault_search_chunks_with_context` round out the other four.
-
-## Why not Obsidian?
-
-Obsidian is excellent at what it does. The difference:
-
-| | claude-vault | Obsidian |
-|---|---|---|
-| Primary consumer | LLM agent | Human writing notes |
-| Editing | Any editor (VSCode, nvim) | Built-in WYSIWYG |
-| Plugin ecosystem | None (by design — minimal surface) | 1000+ plugins |
-| Retrieval | Semantic + graph-aware, built-in | Substring search + graph (via plugins) |
-| MCP integration | Native | Via third-party plugins |
-| Price | Free, OSS | Free personal, $50/yr commercial |
-
-For manual note-taking, use Obsidian. For an LLM-consumable knowledge base that lives next to your code, `claude-vault` is the pitch.
 
 ## Structure
 
@@ -138,9 +134,15 @@ node index.js search-with-context "tab throttling" --limit 3 --depth 2
 - [x] **Chunk-level retrieval** — return the most relevant paragraphs with heading breadcrumbs, not whole files
 - [x] **Graph-aware context** — `vault_read_with_context` and `vault_search_chunks_with_context` return ranked neighbors with snippets
 - [x] **`claude-vault init`** — one command bootstraps a vault, `.mcp.json`, and `.gitignore` in any repo
-- [ ] **npm publish** — install via `npx claude-vault init` without cloning
-- [ ] **Public launch** — README polish, demo video, examples
+- [ ] **[npm publish](https://github.com/bernabranco/claude-vault/issues/2)** — install via `npx claude-vault init` without cloning
+- [ ] **[Hybrid search](https://github.com/bernabranco/claude-vault/issues/4)** — fuse keyword + semantic scores via RRF
+- [ ] **[Reranker](https://github.com/bernabranco/claude-vault/issues/5)** — cross-encoder pass over top-K for precision
+- [ ] **[Public launch polish](https://github.com/bernabranco/claude-vault/issues/3)** — demo GIF, examples, comparison screenshots
+
+## Contributing
+
+PRs welcome — see [CONTRIBUTING.md](CONTRIBUTING.md) for dev setup, the pre-PR CI checks, and workflow conventions. All contributors agree to the [Code of Conduct](CODE_OF_CONDUCT.md).
 
 ## License
 
-MIT
+[MIT](LICENSE)
