@@ -15,7 +15,7 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const program = new Command();
 
 program
-  .name("claude-vault")
+  .name("claude-code-vault")
   .description("Markdown knowledge vault for Claude")
   .version(pkg.version)
   .option("--vault <dir>", "Vault directory", "./vault");
@@ -68,7 +68,7 @@ Navigation guide for this project's knowledge base.
 1. Read \`overview.md\` for a quick intro
 2. Add notes to the appropriate drawer
 3. Use \`[[wikilinks]]\` to connect related notes
-4. Run \`claude-vault check\` to validate
+4. Run \`claude-code-vault check\` to validate
 
 ## 🔗 See Also
 
@@ -122,9 +122,9 @@ Start here. Briefly describe the project.
       const relVault = path.relative(process.cwd(), path.resolve(vaultDir)) || ".";
       const mcpConfig = {
         mcpServers: {
-          "claude-vault": {
+          "claude-code-vault": {
             command: "npx",
-            args: ["claude-vault", "mcp"],
+            args: ["claude-code-vault", "mcp"],
             env: { VAULT_DIR: `./${relVault}` },
           },
         },

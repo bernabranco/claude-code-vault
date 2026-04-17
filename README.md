@@ -1,9 +1,10 @@
 <div align="center">
 
-# claude-vault
+# claude-code-vault
 
 **A markdown knowledge vault designed for Claude.**
 
+[![npm version](https://img.shields.io/npm/v/claude-code-vault.svg)](https://www.npmjs.com/package/claude-code-vault)
 [![CI](https://github.com/bernabranco/claude-vault/actions/workflows/ci.yml/badge.svg)](https://github.com/bernabranco/claude-vault/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 [![Node](https://img.shields.io/badge/node-%3E%3D20-brightgreen)](package.json)
@@ -19,7 +20,7 @@
 
 ---
 
-Most PKM tools (Obsidian, Logseq, Notion) were built for humans writing notes; LLM features are bolted on as plugins. `claude-vault` starts from the other direction: **what would a knowledge base look like if an LLM agent was the primary consumer?**
+Most PKM tools (Obsidian, Logseq, Notion) were built for humans writing notes; LLM features are bolted on as plugins. `claude-code-vault` starts from the other direction: **what would a knowledge base look like if an LLM agent was the primary consumer?**
 
 Browse the demo vault shipped with this repo at [`vault/tempo/`](vault/tempo/) — a fake focus-timer SaaS with ADRs, features, gotchas, market research, and pricing, all wiki-linked into a real graph.
 
@@ -54,7 +55,7 @@ vault/
 │   ├── technical/              ← code, architecture, features, gotchas, ADRs
 │   ├── strategy/               ← research, roadmap, product direction
 │   └── business/               ← GTM, pricing, rollout
-└── your-project/               ← (added by `claude-vault init`)
+└── your-project/               ← (added by `claude-code-vault init`)
     └── ...
 ```
 
@@ -77,13 +78,13 @@ cd web && npm run dev              # http://localhost:5173 (dev mode)
 ## Bootstrap a vault in any repo
 
 ```bash
-claude-vault init [project-name]
+npx claude-code-vault init [project-name]
 ```
 
 Defaults the project name to the current directory name. Creates:
 
 - `vault/<project>/` with drawer structure (`technical/`, `strategy/`, `business/`) and stub `VAULT_SUMMARY.md` + `overview.md`
-- `.mcp.json` at repo root wiring Claude Code to the vault's MCP server (uses `npx claude-vault mcp` with `VAULT_DIR=./vault`)
+- `.mcp.json` at repo root wiring Claude Code to the vault's MCP server (uses `npx claude-code-vault mcp` with `VAULT_DIR=./vault`)
 - `.vault-cache/` entry in `.gitignore` so the local embeddings DB isn't committed
 
 Idempotent: re-running skips existing files. After it finishes, restart Claude Code in the directory to load the vault tools.
@@ -133,8 +134,8 @@ node index.js search-with-context "tab throttling" --limit 3 --depth 2
 - [x] **Semantic search** — local embeddings via `@huggingface/transformers` + `sqlite-vec`
 - [x] **Chunk-level retrieval** — return the most relevant paragraphs with heading breadcrumbs, not whole files
 - [x] **Graph-aware context** — `vault_read_with_context` and `vault_search_chunks_with_context` return ranked neighbors with snippets
-- [x] **`claude-vault init`** — one command bootstraps a vault, `.mcp.json`, and `.gitignore` in any repo
-- [ ] **[npm publish](https://github.com/bernabranco/claude-vault/issues/2)** — install via `npx claude-vault init` without cloning
+- [x] **`claude-code-vault init`** — one command bootstraps a vault, `.mcp.json`, and `.gitignore` in any repo
+- [x] **[npm published](https://www.npmjs.com/package/claude-code-vault)** — install via `npx claude-code-vault init`
 - [ ] **[Hybrid search](https://github.com/bernabranco/claude-vault/issues/4)** — fuse keyword + semantic scores via RRF
 - [ ] **[Reranker](https://github.com/bernabranco/claude-vault/issues/5)** — cross-encoder pass over top-K for precision
 - [ ] **[Public launch polish](https://github.com/bernabranco/claude-vault/issues/3)** — demo GIF, examples, comparison screenshots
