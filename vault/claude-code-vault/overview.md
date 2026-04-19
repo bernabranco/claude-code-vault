@@ -2,7 +2,10 @@
 id: overview
 title: claude-code-vault overview
 description: What claude-code-vault is, the four surfaces it exposes, and how a query flows through the system
+summary: Read first — claude-code-vault is a local-first MCP + CLI for retrieval over a markdown vault. This note covers the four surfaces and the query flow.
 type: overview
+status: current
+lastVerified: 2026-04-20
 tags: [introduction, architecture]
 ---
 

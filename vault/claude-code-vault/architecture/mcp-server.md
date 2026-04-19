@@ -2,7 +2,10 @@
 id: mcp-server
 title: MCP server architecture
 description: The stdio MCP server's tool surface, lifecycle, and how it shares the index with the CLI
+summary: How the MCP server boots, what tools it registers, why everything must use stderr (not stdout), and how the in-process index is shared with the CLI.
 type: architecture
+status: current
+lastVerified: 2026-04-20
 tags: [mcp, server, contract]
 ---
 

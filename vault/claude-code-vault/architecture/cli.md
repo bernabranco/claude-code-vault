@@ -2,7 +2,10 @@
 id: cli
 title: CLI architecture
 description: Commands exposed by the claude-code-vault CLI and the conventions they share
+summary: The CLI command surface, the shared filter flags (folder/tag/after/before), and how HyDE is opted in via --hyde.
 type: architecture
+status: current
+lastVerified: 2026-04-20
 tags: [cli, commander]
 ---
 

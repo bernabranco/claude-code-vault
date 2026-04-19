@@ -46,9 +46,24 @@ Add folders as needed; skip the ones you don't use.
 ## Conventions
 
 - **Every project has a `VAULT_SUMMARY.md`** at its root — this is the index Claude reads first.
-- **Frontmatter on every note** — `title`, `tags`, `date`, `description`.
+- **Frontmatter on every note** — see schema below.
 - **Wiki-links are project-scoped**: `[[claude-code-vault/gotchas/gotchas]]`, not `[[gotchas]]`. Keeps links unambiguous once you add more projects.
 - **Gotchas are first-class** — put non-obvious traps in `gotchas/`, not buried in design docs. They're what Claude needs to surface before suggesting changes.
+
+## Frontmatter schema
+
+All fields are optional except where noted; missing fields fall back to sensible defaults. The parser is additive — older notes keep working.
+
+| Field | Required | Type | Notes |
+|---|---|---|---|
+| `title` | recommended | string | Falls back to first H1, then file id |
+| `tags` | recommended | `[a, b, c]` | Combined with inline `#hashtags` from the body |
+| `date` | optional | `YYYY-MM-DD` | When the note was authored. Used by `after`/`before` filters. |
+| `description` | optional | string | One-line blurb shown in search results / list views |
+| `summary` | optional | string | Longer TL;DR. Falls back to `description` when absent. Future: pinned as chunk-0. |
+| `status` | optional | `draft \| current \| stale \| deprecated` | Defaults to `current`. Drives status-aware retrieval (future). |
+| `type` | optional | `adr \| feature \| gotcha \| runbook \| glossary \| overview \| architecture \| research` | Enables typed-note schemas (future). Unknown values warn on stderr. |
+| `lastVerified` | optional | `YYYY-MM-DD` | Last time the note's claims were checked against reality. Distinct from file mtime. |
 
 ## Example frontmatter
 
@@ -58,6 +73,10 @@ title: My Note Title
 tags: [project-name, adr, storage]
 date: 2026-04-17
 description: One-line summary used in search results and the index
+summary: Longer TL;DR — what this note tells you and when to read it
+status: current
+type: adr
+lastVerified: 2026-04-20
 ---
 
 # Note Content
