@@ -180,11 +180,11 @@ Full roadmap tracker: **[#33 — LLM-first documentation](https://github.com/ber
 
 Infra-only changes that improve what agents get back from a query. No content migration required.
 
-- [ ] **[Retrieval eval harness](https://github.com/bernabranco/claude-code-vault/issues/15)** — gold query→passage dataset + recall@k regression test. *Prerequisite for everything else in Phase 1.*
+- [x] **[Retrieval eval harness](https://github.com/bernabranco/claude-code-vault/issues/15)** — gold query→passage dataset + recall@k regression test. *Prerequisite for everything else in Phase 1.*
 - [ ] **[Hybrid search](https://github.com/bernabranco/claude-code-vault/issues/4)** — fuse keyword + semantic scores via RRF
 - [ ] **[Reranker](https://github.com/bernabranco/claude-code-vault/issues/5)** — cross-encoder pass over top-K for precision
-- [ ] **[HyDE query expansion](https://github.com/bernabranco/claude-code-vault/issues/16)** — embed a hypothetical answer instead of the raw query
-- [ ] **[Filter-before-rank](https://github.com/bernabranco/claude-code-vault/issues/17)** — scope semantic search by tag / folder / date / type
+- [x] **[HyDE query expansion](https://github.com/bernabranco/claude-code-vault/issues/16)** — embed a hypothetical answer instead of the raw query. See [docs/hyde.md](docs/hyde.md).
+- [x] **[Filter-before-rank](https://github.com/bernabranco/claude-code-vault/issues/17)** — scope semantic search by tag / folder / date / type
 
 ### Phase 2 — Provenance + content quality
 
@@ -228,7 +228,7 @@ Polish after the core is solid.
 
 ## Evaluation
 
-Retrieval changes (semantic search, chunk search, future HyDE/filter work) are gated by an eval harness — `test/retrieval/eval.js` — that runs a hand-authored gold dataset through every search tool and reports `recall@5` and `MRR@5`. CI fails if a tool's recall@5 drops by more than **5pp** vs the committed baseline.
+Retrieval changes (semantic search, chunk search, HyDE, filters) are gated by an eval harness — `test/retrieval/eval.js` — that runs a hand-authored gold dataset through every search tool and reports `recall@5` and `MRR@5`. CI fails if a tool's recall@5 drops by more than **5pp** vs the committed baseline.
 
 ```bash
 # Run the harness against the current code
@@ -240,11 +240,16 @@ node test/retrieval/eval.js --update-baseline
 # Tighten the regression gate
 node test/retrieval/eval.js --gate 2
 
+# Measure HyDE lift (needs ANTHROPIC_API_KEY; falls back to raw query without)
+node test/retrieval/eval.js --hyde
+
 # Machine-readable output
 node test/retrieval/eval.js --json
 ```
 
-The dataset (`test/retrieval/gold.json`) is hand-authored and tagged by category (`keyword-only`, `semantic-only`, `vocabulary-gap`, `graph-context`, `multi-section`) so a regression in one category is visible even when the overall number looks fine. Add new entries when shipping a note whose retrieval is non-obvious; never delete entries to make a metric look better.
+The dataset (`test/retrieval/gold.json`) is hand-authored and tagged by category (`keyword-only`, `semantic-only`, `vocabulary-gap`, `graph-context`, `multi-section`, `filter-scope`) so a regression in one category is visible even when the overall number looks fine. Add new entries when shipping a note whose retrieval is non-obvious; never delete entries to make a metric look better.
+
+Deep-dives on individual retrieval techniques live under [docs/](docs/) — see [docs/hyde.md](docs/hyde.md) for how query expansion works and when to enable it.
 
 ## Contributing
 
