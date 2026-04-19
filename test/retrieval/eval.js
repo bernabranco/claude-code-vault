@@ -34,6 +34,7 @@ function parseArgs(argv) {
     updateBaseline: false,
     gate: 5,
     json: false,
+    hyde: false,
     vault: path.resolve(__dirname, "..", "..", "vault"),
     gold: path.join(__dirname, "gold.json"),
     baseline: path.join(__dirname, "baseline.json"),
@@ -42,13 +43,14 @@ function parseArgs(argv) {
     const a = argv[i];
     if (a === "--update-baseline") args.updateBaseline = true;
     else if (a === "--json") args.json = true;
+    else if (a === "--hyde") args.hyde = true;
     else if (a === "--gate") args.gate = Number(argv[++i]);
     else if (a === "--vault") args.vault = path.resolve(argv[++i]);
     else if (a === "--gold") args.gold = path.resolve(argv[++i]);
     else if (a === "--baseline") args.baseline = path.resolve(argv[++i]);
     else if (a === "--help" || a === "-h") {
       console.log(
-        "Usage: node test/retrieval/eval.js [--update-baseline] [--gate N] [--json] [--vault DIR] [--gold FILE] [--baseline FILE]",
+        "Usage: node test/retrieval/eval.js [--update-baseline] [--gate N] [--json] [--hyde] [--vault DIR] [--gold FILE] [--baseline FILE]",
       );
       process.exit(0);
     } else {
@@ -125,6 +127,12 @@ async function runEval(opts) {
     process.stderr.write(
       `[eval] vault=${opts.vault} notes=${vault.index.length} queries=${queries.length}\n`,
     );
+    if (opts.hyde) {
+      const hasKey = Boolean(process.env.ANTHROPIC_API_KEY);
+      process.stderr.write(
+        `[eval] HyDE enabled${hasKey ? "" : " — no ANTHROPIC_API_KEY, falling back to raw queries"}\n`,
+      );
+    }
     process.stderr.write(`[eval] embedding chunks (one-time)...\n`);
   }
   await syncEmbeddings(db, vault);
@@ -143,7 +151,12 @@ async function runEval(opts) {
       category: q.category ?? "uncategorized",
     };
 
-    const searchOpts = { limit: K, ...(q.filters ?? {}) };
+    const searchOpts = {
+      limit: K,
+      ...(q.filters ?? {}),
+      hyde: opts.hyde,
+      warnIfNoHydeKey: false,
+    };
 
     // Keyword tool is note-level and doesn't support filters; when a query
     // specifies filters we skip keyword so we don't mis-attribute misses.

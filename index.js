@@ -526,6 +526,7 @@ program
   .option("--tag <tag...>", "Restrict to notes with any of these tags")
   .option("--after <date>", "Restrict to notes with frontmatter date >= YYYY-MM-DD")
   .option("--before <date>", "Restrict to notes with frontmatter date <= YYYY-MM-DD")
+  .option("--hyde", "Expand query with a hypothetical answer (needs ANTHROPIC_API_KEY)")
   .option("--json", "Output as JSON")
   .description("Search vault by meaning (note-level, local embeddings)")
   .action(async (query, options) => {
@@ -537,6 +538,7 @@ program
       tag: options.tag,
       after: options.after,
       before: options.before,
+      hyde: options.hyde,
     });
     db.close();
 
@@ -558,6 +560,7 @@ program
   .option("--tag <tag...>", "Restrict to notes with any of these tags")
   .option("--after <date>", "Restrict to notes with frontmatter date >= YYYY-MM-DD")
   .option("--before <date>", "Restrict to notes with frontmatter date <= YYYY-MM-DD")
+  .option("--hyde", "Expand query with a hypothetical answer (needs ANTHROPIC_API_KEY)")
   .option("--json", "Output as JSON")
   .description("Search vault at paragraph/section level (chunk retrieval)")
   .action(async (query, options) => {
@@ -569,6 +572,7 @@ program
       tag: options.tag,
       after: options.after,
       before: options.before,
+      hyde: options.hyde,
     });
     db.close();
 
@@ -658,6 +662,7 @@ program
   .option("--tag <tag...>", "Restrict to notes with any of these tags")
   .option("--after <date>", "Restrict to notes with frontmatter date >= YYYY-MM-DD")
   .option("--before <date>", "Restrict to notes with frontmatter date <= YYYY-MM-DD")
+  .option("--hyde", "Expand query with a hypothetical answer (needs ANTHROPIC_API_KEY)")
   .option("--json", "Output as JSON")
   .description("Search chunks and include graph neighbors of hit notes")
   .action(async (query, options) => {
@@ -670,6 +675,7 @@ program
       tag: options.tag,
       after: options.after,
       before: options.before,
+      hyde: options.hyde,
     });
     const anchorIds = [...new Set(chunks.map((c) => c.noteId))];
     const { neighbors, truncated } =
