@@ -240,41 +240,38 @@ program
     }
   });
 
-// ===== CHECK =====
+// ===== LINT =====
 program
-  .command("check")
-  .description("Validate vault: broken links, missing frontmatter")
-  .action(async () => {
+  .command("lint")
+  .description(
+    "Lint vault: dead links, missing frontmatter, orphans, heading skips, stale dates, duplicate candidates"
+  )
+  .option("--format <fmt>", "Output format: text | json | github", "text")
+  .option("--stale-days <n>", "Stale threshold in days for lastVerified", "180")
+  .action(async (options) => {
     const vaultDir = program.opts().vault;
     const vault = new Vault(vaultDir);
     await vault.reindex();
 
-    const noteIds = new Set(vault.index.map((n) => n.id));
-    const issues = [];
+    const { lintVault, hasErrors } = await import("./lib/linter.js");
+    const { formatText, formatJson, formatGitHub } = await import(
+      "./lib/formatters.js"
+    );
 
-    for (const note of vault.index) {
-      if (!note.frontmatter.title) issues.push(`${note.id}: missing title`);
-      if (!note.frontmatter.description)
-        issues.push(`${note.id}: missing description`);
+    const findings = await lintVault(vault, {
+      staleDays: parseInt(options.staleDays, 10),
+    });
 
-      if (note.links) {
-        for (const link of note.links) {
-          if (!noteIds.has(link)) {
-            issues.push(`${note.id}: broken link to ${link}`);
-          }
-        }
-      }
-    }
-
-    if (issues.length === 0) {
-      console.log("✓ No issues found");
+    const fmt = options.format;
+    if (fmt === "json") {
+      console.log(formatJson(findings));
+    } else if (fmt === "github") {
+      for (const line of formatGitHub(findings)) console.log(line);
     } else {
-      console.warn(`⚠ Found ${issues.length} issues:\n`);
-      for (const issue of issues) {
-        console.warn(`  ${issue}`);
-      }
-      process.exit(1);
+      console.log(formatText(findings));
     }
+
+    if (hasErrors(findings)) process.exit(1);
   });
 
 // ===== STATS =====
@@ -365,11 +362,11 @@ description: ""
     spawnSync(editor, [filePath], { stdio: "inherit" });
   });
 
-// ===== LINT =====
+// ===== FIX =====
 program
-  .command("lint")
+  .command("fix")
   .option("--dry-run", "Don't modify files")
-  .description("Auto-fix frontmatter in all notes")
+  .description("Auto-fix frontmatter in all notes (date normalization, missing description, trailing whitespace)")
   .action(async (options) => {
     const vaultDir = program.opts().vault;
     const vault = new Vault(vaultDir);
