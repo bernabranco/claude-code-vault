@@ -1,6 +1,6 @@
 {
-  "generatedAt": "2026-04-19T20:47:23.673Z",
-  "queryCount": 20,
+  "generatedAt": "2026-04-19T21:13:57.179Z",
+  "queryCount": 23,
   "summary": {
     "keyword": {
       "overall": {
@@ -33,14 +33,19 @@
           "recallAt5": 0,
           "mrrAt5": 0,
           "count": 4
+        },
+        "filter-scope": {
+          "recallAt5": 0,
+          "mrrAt5": 0,
+          "count": 0
         }
       }
     },
     "semantic": {
       "overall": {
         "recallAt5": 1,
-        "mrrAt5": 0.885,
-        "count": 20
+        "mrrAt5": 0.9,
+        "count": 23
       },
       "byCategory": {
         "keyword-only": {
@@ -67,14 +72,19 @@
           "recallAt5": 1,
           "mrrAt5": 0.875,
           "count": 4
+        },
+        "filter-scope": {
+          "recallAt5": 1,
+          "mrrAt5": 1,
+          "count": 3
         }
       }
     },
     "chunks": {
       "overall": {
-        "recallAt5": 0.85,
-        "mrrAt5": 0.8,
-        "count": 20
+        "recallAt5": 0.8696,
+        "mrrAt5": 0.8261,
+        "count": 23
       },
       "byCategory": {
         "keyword-only": {
@@ -101,6 +111,11 @@
           "recallAt5": 0.5,
           "mrrAt5": 0.5,
           "count": 4
+        },
+        "filter-scope": {
+          "recallAt5": 1,
+          "mrrAt5": 1,
+          "count": 3
         }
       }
     }

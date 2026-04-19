@@ -78,11 +78,12 @@ function chunkRankMatching(results, expectedNoteId, expectedChunkHeading) {
 }
 
 function aggregate(perQuery) {
-  const total = perQuery.length;
+  const scored = perQuery.filter((q) => !q.skipped);
+  const total = scored.length;
   if (total === 0) return { recallAt5: 0, mrrAt5: 0, count: 0 };
   let hits = 0;
   let mrrSum = 0;
-  for (const q of perQuery) {
+  for (const q of scored) {
     if (q.rank !== null) {
       hits++;
       mrrSum += 1 / q.rank;
@@ -142,19 +143,27 @@ async function runEval(opts) {
       category: q.category ?? "uncategorized",
     };
 
-    const kwResults = vault.search(q.query).slice(0, K);
-    perTool.keyword.push({
-      ...baseEntry,
-      rank: rankOfNote(kwResults, q.expectedNoteId, "id"),
-    });
+    const searchOpts = { limit: K, ...(q.filters ?? {}) };
 
-    const semResults = await semanticSearch(db, vault, q.query, K);
+    // Keyword tool is note-level and doesn't support filters; when a query
+    // specifies filters we skip keyword so we don't mis-attribute misses.
+    if (q.filters) {
+      perTool.keyword.push({ ...baseEntry, rank: null, skipped: true });
+    } else {
+      const kwResults = vault.search(q.query).slice(0, K);
+      perTool.keyword.push({
+        ...baseEntry,
+        rank: rankOfNote(kwResults, q.expectedNoteId, "id"),
+      });
+    }
+
+    const semResults = await semanticSearch(db, vault, q.query, searchOpts);
     perTool.semantic.push({
       ...baseEntry,
       rank: rankOfNote(semResults, q.expectedNoteId, "id"),
     });
 
-    const chunkResults = await searchChunks(db, vault, q.query, K);
+    const chunkResults = await searchChunks(db, vault, q.query, searchOpts);
     perTool.chunks.push({
       ...baseEntry,
       rank: chunkRankMatching(

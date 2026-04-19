@@ -104,6 +104,24 @@
       "expectedNoteId": "tempo/overview",
       "expectedChunkHeading": "Stack",
       "category": "multi-section"
+    },
+    {
+      "query": "architecture",
+      "filters": { "folder": "tempo/designs" },
+      "expectedNoteId": "tempo/designs/frontend-architecture",
+      "category": "filter-scope"
+    },
+    {
+      "query": "what did we decide about backgrounded timers",
+      "filters": { "tag": "adr" },
+      "expectedNoteId": "tempo/adrs/adr-002-web-workers-for-timers",
+      "category": "filter-scope"
+    },
+    {
+      "query": "list of things that bit us in production",
+      "filters": { "tag": ["gotchas", "adr"] },
+      "expectedNoteId": "tempo/gotchas/gotchas",
+      "category": "filter-scope"
     }
   ]
 }
