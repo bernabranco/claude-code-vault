@@ -24,6 +24,21 @@ Most PKM tools (Obsidian, Logseq, Notion) were built for humans writing notes; L
 
 The name points at the first-class integration (Claude Code + MCP), but the vault itself is plain markdown with YAML frontmatter and wiki-links. Any [MCP-compatible](https://modelcontextprotocol.io) client can load the same tool surface, and any agent that can read files can use the vault directly — no Claude required. This repo just ships the Claude Code wiring out of the box.
 
+## Design principle: LLM-first documentation
+
+The bet: LLMs will be the primary executors of code-implementation tasks. If that's true, documentation should be optimized for **LLM consumption**, not human browsing. Human readability is a welcome side effect, not the goal.
+
+In practice that means:
+
+- **Explicit invariants over implied ones.** Say "`VAULT_DIR` env var wins" in a heading, not "usually you'd set the path." Retrievers anchor on explicit claims; implied knowledge doesn't chunk.
+- **Stable headings as addresses.** Chunks are retrieved by heading breadcrumb. Renaming a heading is a URL change — treat it that way.
+- **Cross-references an agent can follow.** Wiki-links (`[[tempo/technical/architecture/gotchas]]`) are deterministic lookups, not decorative. Every concept that matters gets its own note so another note can link to it.
+- **Frontmatter carries routing metadata.** `title`, `tags`, `description`, `date` — structured fields the indexer and retriever use, not styling for humans.
+- **One concept per note.** Longer notes dilute chunk relevance. If a section starts drifting into a second topic, split it and link.
+- **Gotchas are first-class.** Non-obvious traps belong in a dedicated `gotchas.md` so a retrieval on "why does X fail under Y" actually surfaces them.
+
+Every feature in the [roadmap](#roadmap) is evaluated against one question: *does this make it easier for an LLM to find and use the right context?* Nicer human UX is fine only when it doesn't cost LLM precision.
+
 Browse the demo vault shipped with this repo at [`vault/tempo/`](vault/tempo/) — a fake focus-timer SaaS with ADRs, features, gotchas, market research, and pricing, all wiki-linked into a real graph.
 
 > ⚠️ **Status: early, personal tool.** See the [roadmap](#roadmap) for what's built vs. planned.
@@ -150,15 +165,66 @@ node index.js search-with-context "tab throttling" --limit 3 --depth 2
 
 ## Roadmap
 
+Full roadmap tracker: **[#33 — LLM-first documentation](https://github.com/bernabranco/claude-code-vault/issues/33)**.
+
+### Shipped
+
 - [x] **MCP server** — vault exposed as MCP tools so Claude Code queries the vault natively instead of grepping files
 - [x] **Semantic search** — local embeddings via `@huggingface/transformers` + `sqlite-vec`
 - [x] **Chunk-level retrieval** — return the most relevant paragraphs with heading breadcrumbs, not whole files
 - [x] **Graph-aware context** — `vault_read_with_context` and `vault_search_chunks_with_context` return ranked neighbors with snippets
 - [x] **`claude-code-vault init`** — one command bootstraps a vault, `.mcp.json`, and `.gitignore` in any repo
 - [x] **[npm published](https://www.npmjs.com/package/claude-code-vault)** — install via `npx claude-code-vault init`
+
+### Phase 1 — Retrieval precision
+
+Infra-only changes that improve what agents get back from a query. No content migration required.
+
+- [ ] **[Retrieval eval harness](https://github.com/bernabranco/claude-code-vault/issues/15)** — gold query→passage dataset + recall@k regression test. *Prerequisite for everything else in Phase 1.*
 - [ ] **[Hybrid search](https://github.com/bernabranco/claude-code-vault/issues/4)** — fuse keyword + semantic scores via RRF
 - [ ] **[Reranker](https://github.com/bernabranco/claude-code-vault/issues/5)** — cross-encoder pass over top-K for precision
+- [ ] **[HyDE query expansion](https://github.com/bernabranco/claude-code-vault/issues/16)** — embed a hypothetical answer instead of the raw query
+- [ ] **[Filter-before-rank](https://github.com/bernabranco/claude-code-vault/issues/17)** — scope semantic search by tag / folder / date / type
+
+### Phase 2 — Provenance + content quality
+
+Frontmatter additions + linter so agents can trust what they read.
+
+- [ ] **[Frontmatter schema extension](https://github.com/bernabranco/claude-code-vault/issues/18)** — `status`, `lastVerified`, `summary`, `type`
+- [ ] **[Vault content linter](https://github.com/bernabranco/claude-code-vault/issues/19)** — dead links, missing frontmatter, orphans, heading hierarchy, duplicate candidates
+- [ ] **[Typed-note schemas](https://github.com/bernabranco/claude-code-vault/issues/20)** — ADR / feature / gotcha / runbook / glossary with required fields
+- [ ] **[Status-aware retrieval](https://github.com/bernabranco/claude-code-vault/issues/21)** — downrank stale, exclude deprecated by default
+
+### Phase 3 — Write-back (LLMs as authors, not just readers)
+
+Today the vault is read-only from Claude's POV. This phase closes that gap.
+
+- [ ] **[`vault_write` + `vault_create_note`](https://github.com/bernabranco/claude-code-vault/issues/22)** — MCP tools with schema enforcement
+- [ ] **[Section-level edit](https://github.com/bernabranco/claude-code-vault/issues/23)** — append/replace a single heading-section atomically
+- [ ] **[Stub creation + auto-link suggestions](https://github.com/bernabranco/claude-code-vault/issues/24)** — on write, stub unresolved wiki-links and surface suggested links
+
+### Phase 4 — Coverage + evaluation
+
+Know what's missing from the vault; keep it missing less.
+
+- [ ] **[Query-miss log](https://github.com/bernabranco/claude-code-vault/issues/25)** — record zero-result searches for review
+- [ ] **[Repo → vault gap report](https://github.com/bernabranco/claude-code-vault/issues/26)** — code / modules / routes with no vault entry
+- [ ] **[Contradiction detector](https://github.com/bernabranco/claude-code-vault/issues/27)** — flag semantically-overlapping notes with opposing claims
+- [ ] **[Retrieval eval CI gate](https://github.com/bernabranco/claude-code-vault/issues/28)** — fail PR on recall@k regression
+
+### Phase 5 — Ergonomics + multi-project
+
+Polish after the core is solid.
+
+- [ ] **[`vault_tour` + `vault_outline`](https://github.com/bernabranco/claude-code-vault/issues/29)** — cheap orientation tools for fresh sessions
+- [ ] **[Token budgets across all tools](https://github.com/bernabranco/claude-code-vault/issues/30)** — bound every response
+- [ ] **[Shared glossary resolution](https://github.com/bernabranco/claude-code-vault/issues/31)** — `vault/shared/glossary/` auto-resolves jargon across projects
+- [ ] **[Federated search across projects](https://github.com/bernabranco/claude-code-vault/issues/32)** — project-scoped retrieval
+
+### Other
+
 - [ ] **[Public launch polish](https://github.com/bernabranco/claude-code-vault/issues/3)** — demo GIF, examples, comparison screenshots
+- [ ] **[Issue/PR templates](https://github.com/bernabranco/claude-code-vault/issues/6)** — `.github/` scaffolding
 
 ## Contributing
 
