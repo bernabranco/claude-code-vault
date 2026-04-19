@@ -44,6 +44,9 @@ jobs:
           node index.js index
           node index.js search "architecture" --limit 3
 
+      - name: Vault lint (errors fail CI, warnings/info annotate PR)
+        run: node index.js lint --format github
+
       - name: Retrieval eval (recall@5 vs baseline)
         run: node test/retrieval/eval.js --gate 5
 

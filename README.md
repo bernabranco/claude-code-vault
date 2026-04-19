@@ -189,8 +189,8 @@ Infra-only changes that improve what agents get back from a query. No content mi
 
 Frontmatter additions + linter so agents can trust what they read.
 
-- [ ] **[Frontmatter schema extension](https://github.com/bernabranco/claude-code-vault/issues/18)** — `status`, `lastVerified`, `summary`, `type`
-- [ ] **[Vault content linter](https://github.com/bernabranco/claude-code-vault/issues/19)** — dead links, missing frontmatter, orphans, heading hierarchy, duplicate candidates
+- [x] **[Frontmatter schema extension](https://github.com/bernabranco/claude-code-vault/issues/18)** — `status`, `lastVerified`, `summary`, `type`
+- [x] **[Vault content linter](https://github.com/bernabranco/claude-code-vault/issues/19)** — `claude-code-vault lint` (text/JSON/GitHub formats). Dead links, missing frontmatter, orphans, heading skips, oversize/undersize, duplicate candidates, stale dates, unknown enums. Also exposed as the `vault_lint` MCP tool.
 - [ ] **[Typed-note schemas](https://github.com/bernabranco/claude-code-vault/issues/20)** — ADR / feature / gotcha / runbook / glossary with required fields
 - [ ] **[Status-aware retrieval](https://github.com/bernabranco/claude-code-vault/issues/21)** — downrank stale, exclude deprecated by default
 

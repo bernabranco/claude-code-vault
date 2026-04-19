@@ -38,9 +38,10 @@ cd web && npx tsc --noEmit && cd ..
 npm run build
 node index.js index
 node index.js search "architecture" --limit 3
+node index.js lint
 ```
 
-If those all pass locally, CI should pass too.
+If those all pass locally, CI should pass too. `lint` exits 1 on any `error`-level finding (dead wiki-links, missing `title`).
 
 ## Workflow
 
