@@ -11,20 +11,20 @@ Tempo is a **focus timer** for people who bounce between tabs. A session runs in
 
 ## Stack
 
-- **Frontend:** React 19 + Vite + Zustand. See [[tempo/technical/architecture/frontend-architecture]].
-- **Storage:** SQLite compiled to WASM, persisted to OPFS. See [[tempo/technical/decisions/adr-001-local-first-sqlite]].
-- **Timer runtime:** dedicated Web Worker for drift-free tick accounting. See [[tempo/technical/decisions/adr-002-web-workers-for-timers]].
+- **Frontend:** React 19 + Vite + Zustand. See [[tempo/designs/frontend-architecture]].
+- **Storage:** SQLite compiled to WASM, persisted to OPFS. See [[tempo/adrs/adr-001-local-first-sqlite]].
+- **Timer runtime:** dedicated Web Worker for drift-free tick accounting. See [[tempo/adrs/adr-002-web-workers-for-timers]].
 - **Sync (Pro):** encrypted blobs to Cloudflare R2, keyed on a passphrase the user owns.
 
 ## Core flows
 
-1. **Start a focus session** — the main loop. Details in [[tempo/technical/features/focus-sessions]].
+1. **Start a focus session** — the main loop. Details in [[tempo/features/focus-sessions]].
 2. **Review history** — calendar heatmap + drill-down to individual sessions.
-3. **Sync across devices** (Pro only) — see [[tempo/business/pricing]] for tier gates.
+3. **Sync across devices** (Pro only) — see [[tempo/go-to-market/pricing]] for tier gates.
 
 ## Why it exists
 
-The focus-timer space is crowded but mostly cloud-first and account-gated. Tempo's pitch is *"start in one click, own your data."* Market context: [[tempo/strategy/research/productivity-market-2026]].
+The focus-timer space is crowded but mostly cloud-first and account-gated. Tempo's pitch is *"start in one click, own your data."* Market context: [[tempo/research/productivity-market-2026]].
 
 ## Quick start (dev)
 

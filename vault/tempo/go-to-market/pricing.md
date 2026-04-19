@@ -13,12 +13,12 @@ Two tiers. No enterprise tier yet — not enough signal to justify it.
 
 - Up to **3 focus sessions per day**
 - Fixed 25/5 durations (Pomodoro classic)
-- Local-only data (SQLite in the browser — see [[tempo/technical/decisions/adr-001-local-first-sqlite]])
+- Local-only data (SQLite in the browser — see [[tempo/adrs/adr-001-local-first-sqlite]])
 - History, tags, heatmap — all included
 
 The cap is daily, not monthly — we want people to hit it *frequently enough to feel it* but not so often they churn in frustration. 3/day landed after A/B testing 2 vs 3 vs 5.
 
-Gate enforcement lives in [[tempo/technical/features/focus-sessions]] at step 1 of the session-start flow.
+Gate enforcement lives in [[tempo/features/focus-sessions]] at step 1 of the session-start flow.
 
 ## Pro — $4/month or $36/year
 
@@ -32,7 +32,7 @@ Price chosen to be **lower than the perceived cost of a single distracting Twitt
 
 ## Why this works (we think)
 
-Research in [[tempo/strategy/research/productivity-market-2026]] suggests our target users will pay once they trust the tool. The free tier exists specifically to earn that trust — not to be a permanent resting point.
+Research in [[tempo/research/productivity-market-2026]] suggests our target users will pay once they trust the tool. The free tier exists specifically to earn that trust — not to be a permanent resting point.
 
 ## Checkout
 
