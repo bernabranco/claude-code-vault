@@ -1,0 +1,108 @@
+{
+  "generatedAt": "2026-04-19T20:47:23.673Z",
+  "queryCount": 20,
+  "summary": {
+    "keyword": {
+      "overall": {
+        "recallAt5": 0.2,
+        "mrrAt5": 0.2,
+        "count": 20
+      },
+      "byCategory": {
+        "keyword-only": {
+          "recallAt5": 1,
+          "mrrAt5": 1,
+          "count": 4
+        },
+        "semantic-only": {
+          "recallAt5": 0,
+          "mrrAt5": 0,
+          "count": 5
+        },
+        "vocabulary-gap": {
+          "recallAt5": 0,
+          "mrrAt5": 0,
+          "count": 4
+        },
+        "graph-context": {
+          "recallAt5": 0,
+          "mrrAt5": 0,
+          "count": 3
+        },
+        "multi-section": {
+          "recallAt5": 0,
+          "mrrAt5": 0,
+          "count": 4
+        }
+      }
+    },
+    "semantic": {
+      "overall": {
+        "recallAt5": 1,
+        "mrrAt5": 0.885,
+        "count": 20
+      },
+      "byCategory": {
+        "keyword-only": {
+          "recallAt5": 1,
+          "mrrAt5": 1,
+          "count": 4
+        },
+        "semantic-only": {
+          "recallAt5": 1,
+          "mrrAt5": 0.9,
+          "count": 5
+        },
+        "vocabulary-gap": {
+          "recallAt5": 1,
+          "mrrAt5": 0.875,
+          "count": 4
+        },
+        "graph-context": {
+          "recallAt5": 1,
+          "mrrAt5": 0.7333,
+          "count": 3
+        },
+        "multi-section": {
+          "recallAt5": 1,
+          "mrrAt5": 0.875,
+          "count": 4
+        }
+      }
+    },
+    "chunks": {
+      "overall": {
+        "recallAt5": 0.85,
+        "mrrAt5": 0.8,
+        "count": 20
+      },
+      "byCategory": {
+        "keyword-only": {
+          "recallAt5": 1,
+          "mrrAt5": 1,
+          "count": 4
+        },
+        "semantic-only": {
+          "recallAt5": 1,
+          "mrrAt5": 0.9,
+          "count": 5
+        },
+        "vocabulary-gap": {
+          "recallAt5": 1,
+          "mrrAt5": 0.875,
+          "count": 4
+        },
+        "graph-context": {
+          "recallAt5": 0.6667,
+          "mrrAt5": 0.6667,
+          "count": 3
+        },
+        "multi-section": {
+          "recallAt5": 0.5,
+          "mrrAt5": 0.5,
+          "count": 4
+        }
+      }
+    }
+  }
+}
