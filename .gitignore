@@ -12,3 +12,4 @@ build/
 .claude/*
 !.claude/agents/
 !.claude/commands/
+claude-code-vault-temp/

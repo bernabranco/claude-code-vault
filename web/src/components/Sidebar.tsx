@@ -80,7 +80,7 @@ export function Sidebar({
 }: SidebarProps) {
   const [query, setQuery] = useState("");
   const [expanded, setExpanded] = useState<Set<string>>(
-    () => new Set(["tempo", "tempo/adrs", "tempo/designs", "tempo/features", "tempo/gotchas", "tempo/research", "tempo/go-to-market"])
+    () => new Set(["claude-code-vault", "claude-code-vault/adrs", "claude-code-vault/architecture", "claude-code-vault/features", "claude-code-vault/gotchas", "claude-code-vault/research"])
   );
 
   const tree = useMemo(() => buildTree(notes), [notes]);

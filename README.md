@@ -32,38 +32,38 @@ In practice that means:
 
 - **Explicit invariants over implied ones.** Say "`VAULT_DIR` env var wins" in a heading, not "usually you'd set the path." Retrievers anchor on explicit claims; implied knowledge doesn't chunk.
 - **Stable headings as addresses.** Chunks are retrieved by heading breadcrumb. Renaming a heading is a URL change — treat it that way.
-- **Cross-references an agent can follow.** Wiki-links (`[[tempo/technical/architecture/gotchas]]`) are deterministic lookups, not decorative. Every concept that matters gets its own note so another note can link to it.
+- **Cross-references an agent can follow.** Wiki-links (`[[claude-code-vault/gotchas/gotchas]]`) are deterministic lookups, not decorative. Every concept that matters gets its own note so another note can link to it.
 - **Frontmatter carries routing metadata.** `title`, `tags`, `description`, `date` — structured fields the indexer and retriever use, not styling for humans.
 - **One concept per note.** Longer notes dilute chunk relevance. If a section starts drifting into a second topic, split it and link.
 - **Gotchas are first-class.** Non-obvious traps belong in a dedicated `gotchas.md` so a retrieval on "why does X fail under Y" actually surfaces them.
 
 Every feature in the [roadmap](#roadmap) is evaluated against one question: *does this make it easier for an LLM to find and use the right context?* Nicer human UX is fine only when it doesn't cost LLM precision.
 
-Browse the demo vault shipped with this repo at [`vault/tempo/`](vault/tempo/) — a fake focus-timer SaaS with ADRs, features, gotchas, market research, and pricing, all wiki-linked into a real graph.
+Browse the self-docs vault at [`vault/claude-code-vault/`](vault/claude-code-vault/) — this project documents itself using its own tool, with ADRs, architecture notes, features, gotchas, and research all wiki-linked into a real graph. The vault doubles as a test fixture for the retrieval eval harness.
 
 > ⚠️ **Status: early, personal tool.** See the [roadmap](#roadmap) for what's built vs. planned.
 
 <p align="center">
   <img src="assets/print2.jpg" alt="claude-code-vault web UI showing a force-directed graph of wiki-linked notes, with one note selected and its frontmatter displayed in the right sidebar" width="100%" />
   <br />
-  <sub><em>The demo vault rendered as a graph — every wiki-link becomes an edge, every note a node. Click to read.</em></sub>
+  <sub><em>The self-docs vault rendered as a graph — every wiki-link becomes an edge, every note a node. Click to read.</em></sub>
 </p>
 
 ## How it looks in practice
 
-Walk-through using the demo vault. Imagine you've just opened Claude Code in a Tempo-like repo.
+Walk-through using the self-docs vault. Imagine you've just opened Claude Code in this repo and asked about the project.
 
 ### "What's this project?"
-Claude calls `vault_read("tempo/overview")`. Gets the overview + 4 wiki-links pointing at architecture, the core feature, pricing, and market research. Claude now knows where to look next — no grepping required.
+Claude calls `vault_read("claude-code-vault/overview")`. Gets the overview + wiki-links pointing at the ADRs, architecture, features, and research. Claude now knows where to look next — no grepping required.
 
-### "Why did we pick SQLite over a cloud DB?"
-Nothing in the vault contains the literal string *"cloud DB"*. Keyword search returns zero results. Claude falls back to `vault_semantic_search("why SQLite over cloud DB")` → top hit is [`adr-001-local-first-sqlite`](vault/tempo/adrs/adr-001-local-first-sqlite.md) with similarity 0.84, best-chunk heading `ADR-001 > Context`. **Meaning-based retrieval**, not substring matching.
+### "Why did we pick local embeddings over a remote API?"
+The query rephrases how the ADR is written. Claude calls `vault_semantic_search("why did we pick local DB")` → top hit is [`adr-001-local-first-embeddings`](vault/claude-code-vault/adrs/adr-001-local-first-embeddings.md), best-chunk heading `ADR-001 > Rationale`. **Meaning-based retrieval**, not substring matching.
 
-### "Where's the tab-throttling gotcha?"
-Claude doesn't want the whole [`gotchas.md`](vault/tempo/gotchas/gotchas.md) file — just the relevant paragraph. `vault_search_chunks("tab throttling")` returns the exact passage ("`setTimeout` in a background tab is throttled to 1s minimum") with breadcrumb `Gotchas > 1. setTimeout...`. ~40 tokens returned instead of the full file.
+### "Where's the cache-filename-bump gotcha?"
+Claude doesn't want the whole [`gotchas.md`](vault/claude-code-vault/gotchas/gotchas.md) file — just the relevant paragraph. `vault_search_chunks("cache filename bump on schema changes")` returns the exact passage with breadcrumb `Gotchas > CREATE TABLE IF NOT EXISTS is a no-op on existing tables...`. ~50 tokens returned instead of the full file.
 
 ### "Show me ADR-001 with its neighbors"
-`vault_read_with_context("tempo/adrs/adr-001-local-first-sqlite")` returns the ADR **plus** 3 ranked graph neighbors — [`frontend-architecture`](vault/tempo/designs/frontend-architecture.md), [`focus-sessions`](vault/tempo/features/focus-sessions.md), [`adr-002`](vault/tempo/adrs/adr-002-web-workers-for-timers.md) — each with an intro snippet. One round-trip. Bidirectional edges first, then ranked by how many chunks reference them.
+`vault_read_with_context("claude-code-vault/adrs/adr-001-local-first-embeddings")` returns the ADR **plus** ranked graph neighbors — the embeddings pipeline, the gotchas note, the semantic-search feature — each with an intro snippet. One round-trip. Bidirectional edges first, then ranked by how many chunks reference them.
 
 Full tool list is below. `vault_list`, `vault_related`, `vault_search`, and `vault_search_chunks_with_context` round out the other four.
 
@@ -72,15 +72,14 @@ Full tool list is below. `vault_list`, `vault_related`, `vault_search`, and `vau
 ```
 vault/
 ├── README.md                   ← conventions doc
-├── tempo/                      ← demo vault shipped with this repo
+├── claude-code-vault/          ← self-docs: this project's own knowledge base
 │   ├── VAULT_SUMMARY.md        ← index Claude reads first
 │   ├── overview.md
 │   ├── adrs/                   ← Architecture Decision Records
-│   ├── designs/                ← system/architecture designs
+│   ├── architecture/           ← system architecture notes
 │   ├── features/               ← user-facing feature specs
 │   ├── gotchas/                ← non-obvious traps, read before shipping
-│   ├── research/               ← market, user, prior-art research
-│   └── go-to-market/           ← pricing, positioning, rollout
+│   └── research/               ← roadmap + open questions
 └── your-project/               ← (added by `claude-code-vault init`)
     └── ...
 ```
@@ -159,7 +158,7 @@ Wiki-links form a graph. Fetching a note usually means also wanting its neighbor
 Neighbors are ranked: **bidirectional** (A ↔ B) first, then by **link frequency** (how many chunks actually reference the edge, using the per-chunk `links` array captured during chunking), then by **recency** (`lastModified`), then alphabetically. Each neighbor comes with its intro snippet (the `chunk_idx=0` chunk). A `maxChars` budget caps total snippet bytes — if we run out of room, lower-ranked neighbors are dropped and `truncated: true` is set.
 
 ```bash
-node index.js read-with-context tempo/adrs/adr-001-local-first-sqlite
+node index.js read-with-context claude-code-vault/adrs/adr-001-local-first-embeddings
 node index.js search-with-context "tab throttling" --limit 3 --depth 2
 ```
 

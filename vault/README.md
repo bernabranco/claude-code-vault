@@ -9,22 +9,19 @@ Each project you work on gets its own top-level folder. Inside that folder, note
 ```
 vault/
 ├── README.md
-├── tempo/                            ← each project is self-contained (this one is the demo)
+├── claude-code-vault/                ← each project is self-contained (this one is the self-docs)
 │   ├── VAULT_SUMMARY.md              ← index for this project (Claude reads first)
 │   ├── overview.md                   ← the elevator pitch
 │   ├── adrs/                         ← Architecture Decision Records
-│   │   ├── adr-001-local-first-sqlite.md
-│   │   └── adr-002-web-workers-for-timers.md
-│   ├── designs/                      ← system/architecture designs
-│   │   └── frontend-architecture.md
+│   │   └── adr-001-local-first-embeddings.md
+│   ├── architecture/                 ← system/component architecture notes
+│   │   └── mcp-server.md
 │   ├── features/                     ← user-facing feature specs
-│   │   └── focus-sessions.md
+│   │   └── semantic-search.md
 │   ├── gotchas/                      ← non-obvious traps, read before shipping
 │   │   └── gotchas.md
-│   ├── research/                     ← market, user, prior-art research
-│   │   └── productivity-market-2026.md
-│   └── go-to-market/                 ← pricing, positioning, rollout
-│       └── pricing.md
+│   └── research/                     ← thesis, technique survey, roadmap
+│       └── llm-first-docs.md
 ├── another-project/
 │   └── ...
 └── shared/                           ← (optional) cross-project notes
@@ -50,7 +47,7 @@ Add folders as needed; skip the ones you don't use.
 
 - **Every project has a `VAULT_SUMMARY.md`** at its root — this is the index Claude reads first.
 - **Frontmatter on every note** — `title`, `tags`, `date`, `description`.
-- **Wiki-links are project-scoped**: `[[tempo/gotchas/gotchas]]`, not `[[gotchas]]`. Keeps links unambiguous once you add more projects.
+- **Wiki-links are project-scoped**: `[[claude-code-vault/gotchas/gotchas]]`, not `[[gotchas]]`. Keeps links unambiguous once you add more projects.
 - **Gotchas are first-class** — put non-obvious traps in `gotchas/`, not buried in design docs. They're what Claude needs to surface before suggesting changes.
 
 ## Example frontmatter

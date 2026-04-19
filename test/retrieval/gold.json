@@ -1,126 +1,78 @@
 {
-  "$comment": "Hand-authored gold dataset for retrieval eval. Add entries when shipping notes whose retrieval is non-obvious; never delete entries to make a metric look better. Categories: keyword-only (matches title/tag/id), semantic-only (needs body semantics), vocabulary-gap (HyDE target), graph-context (needs neighbor expansion), multi-section (chunk-level scoring).",
+  "$comment": "Hand-authored gold dataset for retrieval eval. Add entries when shipping notes whose retrieval is non-obvious; never delete entries to make a metric look better. Categories: keyword-only (matches title/tag/id), semantic-only (needs body semantics), vocabulary-gap (HyDE target), graph-context (needs neighbor expansion), multi-section (chunk-level scoring), filter-scope (uses filter options).",
   "queries": [
     {
       "query": "ADR-001",
-      "expectedNoteId": "tempo/adrs/adr-001-local-first-sqlite",
+      "expectedNoteId": "claude-code-vault/adrs/adr-001-local-first-embeddings",
       "category": "keyword-only"
     },
     {
-      "query": "pricing",
-      "expectedNoteId": "tempo/go-to-market/pricing",
+      "query": "roadmap",
+      "expectedNoteId": "claude-code-vault/research/roadmap",
       "category": "keyword-only"
     },
     {
       "query": "gotchas",
-      "expectedNoteId": "tempo/gotchas/gotchas",
+      "expectedNoteId": "claude-code-vault/gotchas/gotchas",
       "category": "keyword-only"
     },
     {
-      "query": "frontend architecture",
-      "expectedNoteId": "tempo/designs/frontend-architecture",
+      "query": "mcp server",
+      "expectedNoteId": "claude-code-vault/architecture/mcp-server",
       "category": "keyword-only"
     },
     {
-      "query": "how do we keep the timer accurate when the tab is in the background",
-      "expectedNoteId": "tempo/adrs/adr-002-web-workers-for-timers",
+      "query": "how does Claude Code invoke vault tools",
+      "expectedNoteId": "claude-code-vault/architecture/mcp-server",
       "category": "semantic-only"
     },
     {
-      "query": "what happens if a user closes the tab mid-session",
-      "expectedNoteId": "tempo/features/focus-sessions",
+      "query": "what is our policy on sending vault content to third parties",
+      "expectedNoteId": "claude-code-vault/adrs/adr-001-local-first-embeddings",
       "category": "semantic-only"
     },
     {
-      "query": "what is our policy on storing user data offline",
-      "expectedNoteId": "tempo/adrs/adr-001-local-first-sqlite",
-      "category": "semantic-only"
-    },
-    {
-      "query": "free tier daily session limit",
-      "expectedNoteId": "tempo/go-to-market/pricing",
-      "category": "semantic-only"
-    },
-    {
-      "query": "user research segments and interview findings",
-      "expectedNoteId": "tempo/research/productivity-market-2026",
+      "query": "how do related notes get surfaced",
+      "expectedNoteId": "claude-code-vault/features/graph-expansion",
       "category": "semantic-only"
     },
     {
       "query": "why did we pick local DB",
-      "expectedNoteId": "tempo/adrs/adr-001-local-first-sqlite",
+      "expectedNoteId": "claude-code-vault/adrs/adr-001-local-first-embeddings",
       "category": "vocabulary-gap"
     },
     {
-      "query": "how do we prevent timer drift",
-      "expectedNoteId": "tempo/adrs/adr-002-web-workers-for-timers",
+      "query": "is my data sent to a server",
+      "expectedNoteId": "claude-code-vault/adrs/adr-001-local-first-embeddings",
       "category": "vocabulary-gap"
     },
     {
-      "query": "where does the database live",
-      "expectedNoteId": "tempo/adrs/adr-001-local-first-sqlite",
-      "category": "vocabulary-gap"
-    },
-    {
-      "query": "is data sent to a server",
-      "expectedNoteId": "tempo/adrs/adr-001-local-first-sqlite",
-      "category": "vocabulary-gap"
-    },
-    {
-      "query": "what tradeoffs come with our storage choice",
-      "expectedNoteId": "tempo/adrs/adr-001-local-first-sqlite",
+      "query": "what surfaces share the same index",
+      "expectedNoteId": "claude-code-vault/architecture/mcp-server",
       "category": "graph-context"
     },
     {
-      "query": "how does pricing relate to session limits",
-      "expectedNoteId": "tempo/features/focus-sessions",
-      "category": "graph-context"
-    },
-    {
-      "query": "what should I read before touching timer code",
-      "expectedNoteId": "tempo/gotchas/gotchas",
-      "category": "graph-context"
-    },
-    {
-      "query": "OPFS WAL corruption on force close",
-      "expectedNoteId": "tempo/gotchas/gotchas",
-      "expectedChunkHeading": "3. SQLite WAL mode + OPFS = corruption risk on force-close",
+      "query": "cache filename bump on schema changes",
+      "expectedNoteId": "claude-code-vault/gotchas/gotchas",
+      "expectedChunkHeading": "Cache filename bump required after schema or model changes",
       "category": "multi-section"
     },
     {
-      "query": "Zustand HMR subscription leak",
-      "expectedNoteId": "tempo/gotchas/gotchas",
-      "expectedChunkHeading": "4. Zustand subscriptions leak across HMR",
-      "category": "multi-section"
-    },
-    {
-      "query": "what is the decision recorded in ADR-001",
-      "expectedNoteId": "tempo/adrs/adr-001-local-first-sqlite",
-      "expectedChunkHeading": "Decision",
-      "category": "multi-section"
-    },
-    {
-      "query": "tempo's stack and tech choices",
-      "expectedNoteId": "tempo/overview",
-      "expectedChunkHeading": "Stack",
+      "query": "ambiguous rowid error with sqlite-vec",
+      "expectedNoteId": "claude-code-vault/gotchas/gotchas",
+      "expectedChunkHeading": "sqlite-vec rowid must be qualified",
       "category": "multi-section"
     },
     {
       "query": "architecture",
-      "filters": { "folder": "tempo/designs" },
-      "expectedNoteId": "tempo/designs/frontend-architecture",
+      "filters": { "folder": "claude-code-vault/architecture" },
+      "expectedNoteId": "claude-code-vault/architecture/mcp-server",
       "category": "filter-scope"
     },
     {
-      "query": "what did we decide about backgrounded timers",
+      "query": "what did we decide about embeddings",
       "filters": { "tag": "adr" },
-      "expectedNoteId": "tempo/adrs/adr-002-web-workers-for-timers",
-      "category": "filter-scope"
-    },
-    {
-      "query": "list of things that bit us in production",
-      "filters": { "tag": ["gotchas", "adr"] },
-      "expectedNoteId": "tempo/gotchas/gotchas",
+      "expectedNoteId": "claude-code-vault/adrs/adr-001-local-first-embeddings",
       "category": "filter-scope"
     }
   ]

@@ -19,15 +19,14 @@ You own the technical direction of `claude-code-vault`. This is a deliberately b
 
 - **`VAULT_DIR` env var wins.** The viewer and MCP both resolve their root from it. Regression-prone — last fix was commit `c6ca0f9`.
 - **Public npm tarball ships `index.js` + `lib/` only** (see `files:` in [package.json](../../package.json)). The `web/` viewer is clone-only. Never add a runtime dependency on `web/` from `lib/`.
-- **Demo vault is `vault/tempo/`** (fake focus-timer SaaS). No PoseVision or other real-project content ever goes here.
+- **Demo vault is `vault/claude-code-vault/`** (self-documentation of this project; doubles as retrieval-eval fixture). No real-project content ever goes here.
 - **ESM only.** Node ≥ 20. No `require()`.
-- **Three vault copies exist** (canonical in pose-vision repo, master backup, public demo). This repo owns only the public demo. See `memory/project_claude_vault.md` for the full map.
 
 ## When invoked
 
 1. Clarify which surface(s) the task touches. If it spans two or more, mention that — signal for future agent split.
 2. Read the relevant files before proposing changes. Don't guess module boundaries from names.
-3. For any change that could affect the MCP tool contract (names, input/output shape), call it out explicitly — downstream consumers (including the canonical PoseVision vault) depend on it.
+3. For any change that could affect the MCP tool contract (names, input/output shape), call it out explicitly — downstream consumers depend on it.
 4. For indexer changes, verify re-indexing stays idempotent on an unchanged vault.
 5. Prefer small, surgical edits. Don't refactor neighbouring code "while you're there."
 
