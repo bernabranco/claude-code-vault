@@ -2,7 +2,10 @@
 id: gotchas
 title: Gotchas
 description: Real failure modes you'll hit when running, installing, or extending claude-code-vault, and the fix for each
-type: gotchas
+summary: Real failure modes — NODE_MODULE_VERSION, sqlite-vec rowid ambiguity, cache filename bumps, MCP stdout discipline, chokidar reindex behavior, ANTHROPIC_API_KEY hygiene, no --no-verify or --squash. Read before shipping.
+type: gotcha
+status: current
+lastVerified: 2026-04-20
 tags: [troubleshooting, install, runtime]
 ---
 

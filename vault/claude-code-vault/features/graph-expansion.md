@@ -2,7 +2,10 @@
 id: graph-expansion
 title: Graph expansion via wiki-links
 description: How vault_related and read-with-context walk the wiki-link graph to surface neighboring notes
+summary: The wiki-link graph powers vault_related and read-with-context. Bidirectional edges rank first; depth=2 fans out fast and is rarely worth it.
 type: feature
+status: current
+lastVerified: 2026-04-20
 tags: [graph, wiki-links, related]
 ---
 

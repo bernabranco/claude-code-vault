@@ -2,7 +2,10 @@
 id: semantic-search
 title: Semantic search
 description: How to call semantic search from the CLI and MCP, common filter recipes, and when to enable HyDE
+summary: Concrete CLI and MCP examples for semantic search, the filter recipes you'll actually reach for, and the rule of thumb for when HyDE is worth its latency.
 type: feature
+status: current
+lastVerified: 2026-04-20
 tags: [search, embeddings, mcp, cli]
 ---
 

@@ -2,7 +2,10 @@
 id: embeddings-pipeline
 title: Embeddings pipeline architecture
 description: How notes are chunked, embedded, indexed, and queried with sqlite-vec, including the filter-before-rank pattern
+summary: Chunking, embedding, sqlite-vec schema, and the filter-before-rank rowid pre-filter that scopes vector search by tag/folder/date before ranking.
 type: architecture
+status: current
+lastVerified: 2026-04-20
 tags: [embeddings, sqlite-vec, indexing]
 ---
 

@@ -2,7 +2,10 @@
 id: vault-summary
 title: claude-code-vault — vault summary
 description: Top-level orientation for the claude-code-vault demo vault — what's in here and where to start
-type: summary
+summary: Index and orientation for the claude-code-vault self-docs. Lists every note in this vault and points new readers at the right starting note.
+type: overview
+status: current
+lastVerified: 2026-04-20
 tags: [orientation, index]
 ---
 

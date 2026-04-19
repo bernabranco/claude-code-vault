@@ -2,9 +2,11 @@
 id: adr-001-local-first-embeddings
 title: ADR-001 — local-first embeddings with MiniLM + sqlite-vec
 description: Why claude-code-vault embeds on-device with a small sentence-transformer rather than calling a remote embedding API
+summary: Decision (accepted 2026-03-01) to embed on-device with all-MiniLM-L6-v2 + sqlite-vec rather than call a remote embedding API. Trade-off accepted: 384-dim recall ceiling in exchange for no API key, no network, and no per-query cost.
 type: adr
-status: accepted
+status: current
 date: 2026-03-01
+lastVerified: 2026-04-20
 tags: [decision, embeddings, local-first]
 ---
 

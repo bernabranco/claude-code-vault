@@ -2,7 +2,10 @@
 id: roadmap
 title: Roadmap
 description: What's shipped, what's next, and what's deliberately out of scope for claude-code-vault
+summary: Shipped so far (filter-before-rank, heading-aware chunking, HyDE, eval harness), near-term retrieval and ergonomics work, and the deliberate non-goals (not Obsidian, not a vector DB, not a remote service).
 type: research
+status: current
+lastVerified: 2026-04-20
 tags: [roadmap, planning]
 ---
 
