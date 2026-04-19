@@ -507,7 +507,7 @@ async function openSyncedDb() {
 
   const cacheDir = path.resolve(vaultDir, "..", ".vault-cache");
   await fs.mkdir(cacheDir, { recursive: true });
-  const db = openEmbeddingsDb(path.join(cacheDir, "embeddings.db"));
+  const db = openEmbeddingsDb(path.join(cacheDir, "embeddings-v2.db"));
 
   console.error("Syncing embeddings...");
   const stats = await syncEmbeddings(db, vault);
@@ -522,13 +522,22 @@ async function openSyncedDb() {
 program
   .command("semantic-search <query>")
   .option("--limit <n>", "Max results", "10")
+  .option("--folder <path>", "Restrict to note ids under this folder prefix")
+  .option("--tag <tag...>", "Restrict to notes with any of these tags")
+  .option("--after <date>", "Restrict to notes with frontmatter date >= YYYY-MM-DD")
+  .option("--before <date>", "Restrict to notes with frontmatter date <= YYYY-MM-DD")
   .option("--json", "Output as JSON")
   .description("Search vault by meaning (note-level, local embeddings)")
   .action(async (query, options) => {
     const { semanticSearch } = await import("./lib/embeddings.js");
     const { db, vault } = await openSyncedDb();
-    const limit = parseInt(options.limit);
-    const results = await semanticSearch(db, vault, query, limit);
+    const results = await semanticSearch(db, vault, query, {
+      limit: parseInt(options.limit),
+      folder: options.folder,
+      tag: options.tag,
+      after: options.after,
+      before: options.before,
+    });
     db.close();
 
     if (options.json) {
@@ -545,13 +554,22 @@ program
 program
   .command("search-chunks <query>")
   .option("--limit <n>", "Max results", "5")
+  .option("--folder <path>", "Restrict to note ids under this folder prefix")
+  .option("--tag <tag...>", "Restrict to notes with any of these tags")
+  .option("--after <date>", "Restrict to notes with frontmatter date >= YYYY-MM-DD")
+  .option("--before <date>", "Restrict to notes with frontmatter date <= YYYY-MM-DD")
   .option("--json", "Output as JSON")
   .description("Search vault at paragraph/section level (chunk retrieval)")
   .action(async (query, options) => {
     const { searchChunks } = await import("./lib/embeddings.js");
     const { db, vault } = await openSyncedDb();
-    const limit = parseInt(options.limit);
-    const results = await searchChunks(db, vault, query, limit);
+    const results = await searchChunks(db, vault, query, {
+      limit: parseInt(options.limit),
+      folder: options.folder,
+      tag: options.tag,
+      after: options.after,
+      before: options.before,
+    });
     db.close();
 
     if (options.json) {
@@ -636,14 +654,23 @@ program
   .option("--limit <n>", "Max chunk results", "5")
   .option("--depth <n>", "Neighbor hop depth (1 or 2)", "1")
   .option("--max-chars <n>", "Budget for neighbor snippets", "8000")
+  .option("--folder <path>", "Restrict to note ids under this folder prefix")
+  .option("--tag <tag...>", "Restrict to notes with any of these tags")
+  .option("--after <date>", "Restrict to notes with frontmatter date >= YYYY-MM-DD")
+  .option("--before <date>", "Restrict to notes with frontmatter date <= YYYY-MM-DD")
   .option("--json", "Output as JSON")
   .description("Search chunks and include graph neighbors of hit notes")
   .action(async (query, options) => {
     const { searchChunks } = await import("./lib/embeddings.js");
     const { expandNeighbors } = await import("./lib/graph.js");
     const { db, vault } = await openSyncedDb();
-    const limit = parseInt(options.limit);
-    const chunks = await searchChunks(db, vault, query, limit);
+    const chunks = await searchChunks(db, vault, query, {
+      limit: parseInt(options.limit),
+      folder: options.folder,
+      tag: options.tag,
+      after: options.after,
+      before: options.before,
+    });
     const anchorIds = [...new Set(chunks.map((c) => c.noteId))];
     const { neighbors, truncated } =
       anchorIds.length > 0
