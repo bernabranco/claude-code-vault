@@ -17,8 +17,8 @@ Tempo is a single-page app, entirely client-side by default. No server round-tri
 ├────────────────────────────────┤
 │  Zustand store                 │  ← source of truth for UI state
 ├────────────────────────────────┤
-│  Timer Worker                  │  ← see [[tempo/technical/decisions/adr-002-web-workers-for-timers]]
-│  SQLite-WASM (OPFS)            │  ← see [[tempo/technical/decisions/adr-001-local-first-sqlite]]
+│  Timer Worker                  │  ← see [[tempo/adrs/adr-002-web-workers-for-timers]]
+│  SQLite-WASM (OPFS)            │  ← see [[tempo/adrs/adr-001-local-first-sqlite]]
 └────────────────────────────────┘
 ```
 
@@ -33,9 +33,9 @@ The store subscribes to messages from the Timer Worker (one message per second) 
 
 ## Known traps
 
-Before touching this code, skim [[tempo/technical/architecture/gotchas]]. The two biggest:
+Before touching this code, skim [[tempo/gotchas/gotchas]]. The two biggest:
 
-1. **Tab throttling** killed our first timer implementation. That's why [[tempo/technical/decisions/adr-002-web-workers-for-timers]] exists.
+1. **Tab throttling** killed our first timer implementation. That's why [[tempo/adrs/adr-002-web-workers-for-timers]] exists.
 2. **OPFS writes block the main thread** if you forget to use the async cursor. Always `await db.execAsync(...)`.
 
 ## Test strategy

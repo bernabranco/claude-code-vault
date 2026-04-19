@@ -14,7 +14,7 @@ description: Why the Pomodoro tick loop runs in a dedicated Web Worker instead o
 
 First version of Tempo ran the tick loop with `setInterval` on the main thread. Reports started coming in: *"I backgrounded the tab for 25 minutes and when I came back my timer was at 9 minutes."*
 
-Root cause: Chrome and Firefox throttle timers in background tabs. `setInterval(1000)` becomes `setInterval(≥60000)` once the tab is hidden long enough. The timer doesn't pause — it just ticks slower than it claims to. This is [[tempo/technical/architecture/gotchas]] #1, written up after we got burned.
+Root cause: Chrome and Firefox throttle timers in background tabs. `setInterval(1000)` becomes `setInterval(≥60000)` once the tab is hidden long enough. The timer doesn't pause — it just ticks slower than it claims to. This is [[tempo/gotchas/gotchas]] #1, written up after we got burned.
 
 ## Decision
 
@@ -23,7 +23,7 @@ Move the tick loop to a **dedicated Web Worker**. Workers are throttled much les
 Architecture:
 - Worker computes elapsed time from a monotonic clock (`performance.now()` inside the Worker), not a naive counter.
 - Worker posts `{ remaining, phase }` messages at 1 Hz.
-- Main thread (React + Zustand — see [[tempo/technical/architecture/frontend-architecture]]) just renders the latest value.
+- Main thread (React + Zustand — see [[tempo/designs/frontend-architecture]]) just renders the latest value.
 
 ## Consequences
 
@@ -37,6 +37,6 @@ Architecture:
 - Workers can still be suspended if the browser reclaims memory. Rare, but possible. We detect this on resume and reconcile against `performance.now()`.
 
 ### Related
-- The feature using this timer: [[tempo/technical/features/focus-sessions]]
-- Storage decisions that interact with tick accounting: [[tempo/technical/decisions/adr-001-local-first-sqlite]]
-- Integration: [[tempo/technical/architecture/frontend-architecture]]
+- The feature using this timer: [[tempo/features/focus-sessions]]
+- Storage decisions that interact with tick accounting: [[tempo/adrs/adr-001-local-first-sqlite]]
+- Integration: [[tempo/designs/frontend-architecture]]
