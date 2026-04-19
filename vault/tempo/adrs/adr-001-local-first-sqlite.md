@@ -21,7 +21,7 @@ We needed storage that:
 
 ## Decision
 
-Use **SQLite compiled to WASM**, persisted to **OPFS** (Origin Private File System). Sync is layered on top as an opt-in Pro feature — see [[tempo/business/pricing]] — that uploads encrypted snapshots to R2.
+Use **SQLite compiled to WASM**, persisted to **OPFS** (Origin Private File System). Sync is layered on top as an opt-in Pro feature — see [[tempo/go-to-market/pricing]] — that uploads encrypted snapshots to R2.
 
 The critical path — "start a session and write a tick" — never touches the network.
 
@@ -33,11 +33,11 @@ The critical path — "start a session and write a tick" — never touches the n
 - Users own their data by default. Exporting is a single `.sqlite` file.
 
 ### Bad
-- OPFS is newer and has gotchas — see [[tempo/technical/architecture/gotchas]] for the WAL corruption case we hit in beta.
+- OPFS is newer and has gotchas — see [[tempo/gotchas/gotchas]] for the WAL corruption case we hit in beta.
 - Cross-origin mounts are impossible. Two subdomains = two databases. We warn on boot if origin mismatches.
 - Sync conflict resolution is our problem, not the DB's. Current strategy: last-writer-wins per session, which is fine because sessions are append-only once ended.
 
 ### Related
-- Timer accounting that depends on this storage: [[tempo/technical/features/focus-sessions]]
-- The other major architectural choice: [[tempo/technical/decisions/adr-002-web-workers-for-timers]]
-- Integration details: [[tempo/technical/architecture/frontend-architecture]]
+- Timer accounting that depends on this storage: [[tempo/features/focus-sessions]]
+- The other major architectural choice: [[tempo/adrs/adr-002-web-workers-for-timers]]
+- Integration details: [[tempo/designs/frontend-architecture]]

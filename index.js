@@ -37,9 +37,9 @@ program
       // Doesn't exist, proceed
     }
 
-    // Create drawer structure
-    for (const drawer of ["technical", "strategy", "business"]) {
-      await fs.mkdir(path.join(projectPath, drawer), { recursive: true });
+    // Create type-first folder structure
+    for (const folder of ["adrs", "designs", "features", "gotchas", "research", "go-to-market"]) {
+      await fs.mkdir(path.join(projectPath, folder), { recursive: true });
     }
 
     // Create VAULT_SUMMARY.md
@@ -59,14 +59,17 @@ Navigation guide for this project's knowledge base.
 
 ## 📚 Structure
 
-- **\`technical/\`** — code, architecture, features, decisions, gotchas
-- **\`strategy/\`** — research, roadmap, product direction
-- **\`business/\`** — GTM, pricing, rollout
+- **\`adrs/\`** — Architecture Decision Records
+- **\`designs/\`** — system/architecture designs
+- **\`features/\`** — user-facing feature specs
+- **\`gotchas/\`** — non-obvious traps, read before shipping
+- **\`research/\`** — market, user, prior-art research
+- **\`go-to-market/\`** — pricing, positioning, rollout
 
 ## 🚀 Getting Started
 
 1. Read \`overview.md\` for a quick intro
-2. Add notes to the appropriate drawer
+2. Add notes to the folder matching their type
 3. Use \`[[wikilinks]]\` to connect related notes
 4. Run \`claude-code-vault check\` to validate
 
@@ -101,18 +104,18 @@ Start here. Briefly describe the project.
 
 ## Next steps
 
-1. Add architecture docs to \`technical/architecture/\`
-2. Add research to \`strategy/research/\`
-3. Add business info to \`business/\`
+1. Add design docs to \`designs/\`, decisions to \`adrs/\`
+2. Add research to \`research/\`
+3. Add pricing/positioning/rollout info to \`go-to-market/\`
 `
     );
 
     console.log(`✓ Created vault at ${projectPath}`);
     console.log(`  - ${path.join(project, "VAULT_SUMMARY.md")}`);
     console.log(`  - ${path.join(project, "overview.md")}`);
-    console.log(`  - ${path.join(project, "technical/")}`);
-    console.log(`  - ${path.join(project, "strategy/")}`);
-    console.log(`  - ${path.join(project, "business/")}`);
+    for (const folder of ["adrs", "designs", "features", "gotchas", "research", "go-to-market"]) {
+      console.log(`  - ${path.join(project, folder + "/")}`);
+    }
 
     const mcpPath = path.resolve(".mcp.json");
     try {

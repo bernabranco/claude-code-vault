@@ -29,8 +29,8 @@ Through interviews (n=22, spring 2026) the segments that care are:
 
 ## Why now
 
-Browser capability unlocks (OPFS, stable Web Workers) make "local-first web app" viable without a native wrapper. Five years ago this product would've been a Tauri/Electron download. See [[tempo/technical/decisions/adr-001-local-first-sqlite]] for the tech that makes it work.
+Browser capability unlocks (OPFS, stable Web Workers) make "local-first web app" viable without a native wrapper. Five years ago this product would've been a Tauri/Electron download. See [[tempo/adrs/adr-001-local-first-sqlite]] for the tech that makes it work.
 
 ## Pricing implications
 
-Free tier has to be genuinely useful so users can validate the tool before paying. Pro is "sync + unlimited sessions + custom durations" — see [[tempo/business/pricing]] for the breakdown.
+Free tier has to be genuinely useful so users can validate the tool before paying. Pro is "sync + unlimited sessions + custom durations" — see [[tempo/go-to-market/pricing]] for the breakdown.

@@ -12,15 +12,15 @@ The user hits **Start**, a 25-minute timer begins, they work, a bell rings, they
 ## Flow
 
 1. User clicks **Start** → Zustand dispatches `startSession({ length: 25*60 })`.
-2. Store spins up the Timer Worker (if not already running) — see [[tempo/technical/decisions/adr-002-web-workers-for-timers]].
+2. Store spins up the Timer Worker (if not already running) — see [[tempo/adrs/adr-002-web-workers-for-timers]].
 3. Worker posts `{ remaining, phase: 'focus' }` at 1 Hz.
 4. UI renders. Store buffers ticks in memory.
-5. On completion: store writes a `sessions` row to SQLite — see [[tempo/technical/decisions/adr-001-local-first-sqlite]].
+5. On completion: store writes a `sessions` row to SQLite — see [[tempo/adrs/adr-001-local-first-sqlite]].
 6. UI transitions to a break phase. Repeat.
 
 ## Limits (by tier)
 
-Free users get 3 sessions per day. Pro users get unlimited and can customize durations. Details in [[tempo/business/pricing]]. The gate is enforced at step 1 — `startSession` throws `DailyLimitReached` if the user hits the cap.
+Free users get 3 sessions per day. Pro users get unlimited and can customize durations. Details in [[tempo/go-to-market/pricing]]. The gate is enforced at step 1 — `startSession` throws `DailyLimitReached` if the user hits the cap.
 
 ## Data model
 

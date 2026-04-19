@@ -11,7 +11,7 @@ Small list, keeps growing.
 
 ## 1. `setTimeout` in a background tab is throttled to 1s minimum
 
-This is why the timer runs in a Worker — see [[tempo/technical/decisions/adr-002-web-workers-for-timers]]. If you see "drift" reports in Sentry, check that the session was started while the tab was foregrounded; that path has a different code branch.
+This is why the timer runs in a Worker — see [[tempo/adrs/adr-002-web-workers-for-timers]]. If you see "drift" reports in Sentry, check that the session was started while the tab was foregrounded; that path has a different code branch.
 
 ## 2. OPFS is same-origin only
 
