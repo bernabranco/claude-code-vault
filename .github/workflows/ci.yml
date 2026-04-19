@@ -29,7 +29,7 @@ jobs:
         run: cd web && npm install && cd ..
 
       - name: Type check (CLI)
-        run: npx tsc --noEmit --allowJs --skipLibCheck index.js lib/*.js
+        run: npx tsc --noEmit --allowJs --skipLibCheck index.js lib/*.js test/retrieval/eval.js
 
       - name: Type check (web)
         run: cd web && npx tsc --noEmit && cd ..
@@ -43,6 +43,9 @@ jobs:
           node index.js --help
           node index.js index
           node index.js search "architecture" --limit 3
+
+      - name: Retrieval eval (recall@5 vs baseline)
+        run: node test/retrieval/eval.js --gate 5
 
       - name: Lint web (if eslintrc exists)
         run: cd web && npm run lint 2>/dev/null || echo "No lint script defined"

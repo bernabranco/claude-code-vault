@@ -226,6 +226,26 @@ Polish after the core is solid.
 - [ ] **[Public launch polish](https://github.com/bernabranco/claude-code-vault/issues/3)** — demo GIF, examples, comparison screenshots
 - [ ] **[Issue/PR templates](https://github.com/bernabranco/claude-code-vault/issues/6)** — `.github/` scaffolding
 
+## Evaluation
+
+Retrieval changes (semantic search, chunk search, future HyDE/filter work) are gated by an eval harness — `test/retrieval/eval.js` — that runs a hand-authored gold dataset through every search tool and reports `recall@5` and `MRR@5`. CI fails if a tool's recall@5 drops by more than **5pp** vs the committed baseline.
+
+```bash
+# Run the harness against the current code
+node test/retrieval/eval.js
+
+# Update the baseline after an intentional improvement
+node test/retrieval/eval.js --update-baseline
+
+# Tighten the regression gate
+node test/retrieval/eval.js --gate 2
+
+# Machine-readable output
+node test/retrieval/eval.js --json
+```
+
+The dataset (`test/retrieval/gold.json`) is hand-authored and tagged by category (`keyword-only`, `semantic-only`, `vocabulary-gap`, `graph-context`, `multi-section`) so a regression in one category is visible even when the overall number looks fine. Add new entries when shipping a note whose retrieval is non-obvious; never delete entries to make a metric look better.
+
 ## Contributing
 
 PRs welcome — see [CONTRIBUTING.md](CONTRIBUTING.md) for dev setup, the pre-PR CI checks, and workflow conventions. All contributors agree to the [Code of Conduct](CODE_OF_CONDUCT.md).
