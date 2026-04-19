@@ -1,0 +1,27 @@
+---
+id: vault-summary
+title: claude-code-vault — vault summary
+description: Top-level orientation for the claude-code-vault demo vault — what's in here and where to start
+type: summary
+tags: [orientation, index]
+---
+
+# claude-code-vault demo vault
+
+This vault doubles as documentation for `claude-code-vault` itself and as the retrieval-eval fixture used by `test/retrieval/eval.js`. The notes follow the same conventions any consumer vault should follow: YAML frontmatter, one concept per file, breadcrumb-style headings, wiki-links between notes.
+
+## Where to start
+
+- New here? → [[claude-code-vault/overview]]
+- Want to use the search API? → [[claude-code-vault/features/semantic-search]]
+- Hitting an install or runtime error? → [[claude-code-vault/gotchas/gotchas]]
+- Curious *why* the stack looks the way it does? → [[claude-code-vault/adrs/adr-001-local-first-embeddings]]
+- Looking ahead? → [[claude-code-vault/research/roadmap]]
+
+## Folders
+
+- `adrs/` — architecture decision records, one decision per note
+- `architecture/` — how the moving parts fit together
+- `features/` — user-facing capabilities and how to invoke them
+- `gotchas/` — real failure modes and their fixes
+- `research/` — open questions and forward-looking notes

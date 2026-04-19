@@ -33,7 +33,7 @@ Given an issue number:
 3. Confirm the plan with the user before coding unless the issue is trivial (typo, docs).
 4. Branch: `git checkout -b fix/issue-<n>-<slug>` (or `feat/...` / `docs/...`).
 5. Implement minimal, targeted changes.
-6. Verify: `npm install --no-audit --no-fund && node lib/mcp.js --help >/dev/null` plus any surface-specific smoke check (viewer boot, `node index.js list` on `vault/tempo`).
+6. Verify: `npm install --no-audit --no-fund && node lib/mcp.js --help >/dev/null` plus any surface-specific smoke check (viewer boot, `node index.js list` on `vault/claude-code-vault`).
 7. Commit with a body referencing the issue (`Closes #<n>`). Git identity must be `bernardoagbranco@gmail.com` — stop and ask if it isn't.
 8. Push and open a PR via the template below.
 

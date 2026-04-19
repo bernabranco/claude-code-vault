@@ -35,7 +35,7 @@ The original paper: [Gao et al., 2022 — Precise Zero-Shot Dense Retrieval with
 
 ## Concrete gains
 
-On the tempo vault, our `vocabulary-gap` category (see [test/retrieval/gold.json](../test/retrieval/gold.json)) already hits 100% recall@5 for semantic — there's no headroom to demonstrate HyDE lift on this specific corpus. The value shows up on larger, lower-precision corpora where:
+On the self-docs vault, our `vocabulary-gap` category (see [test/retrieval/gold.json](../test/retrieval/gold.json)) already hits high recall@5 for semantic — there's limited headroom to demonstrate HyDE lift on this specific corpus. The value shows up on larger, lower-precision corpora where:
 
 1. The query uses generic words (`"how do we handle auth"`)
 2. The target docs use proprietary/jargon vocabulary (`"Identity Broker middleware"`, `"JWT rotation cadence"`)
