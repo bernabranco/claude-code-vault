@@ -11,3 +11,4 @@ build/
 .vault-cache/
 .claude/*
 !.claude/agents/
+!.claude/commands/
