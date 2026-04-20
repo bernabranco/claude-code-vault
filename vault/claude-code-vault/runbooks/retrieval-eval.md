@@ -35,17 +35,33 @@ Drops at or below the warn threshold are silent (noise floor for a 14-query gold
 
 Improvements are printed in the human report (`Δrecall +X.Xpp`) but never auto-update the baseline — you must bless deliberately.
 
-## Runbook: when the eval fails on your PR
+## Steps
 
-1. Read the CI log for the eval step. It lists each failing tool with `base% -> cur% (-Xpp)`.
-2. Run locally: `npm run eval -- --gate 2 --warn-gate 0.5` to reproduce.
-3. Classify the drop:
-   - **Unintended regression.** Your change broke something. Fix the code, not the baseline.
-   - **Intentional trade-off** (e.g. a better chunking strategy that costs 3pp on keyword-only queries but wins 8pp on semantic-only). Land the improvement, then bless.
-   - **Gold set is wrong.** The query expected the old behavior. Edit `test/retrieval/gold.json`, re-bless.
-4. If blessing is appropriate, run `npm run eval:bless` and commit the updated `baseline.json` in the same PR as the change that caused the shift. Call it out in the PR description — blessing a baseline without explaining why is the main way retrieval decay sneaks in.
+Follow these when the eval fails on your PR.
 
-## Runbook: when the eval warns on your PR
+### 1. Read the CI log
+
+The eval step lists each failing tool with `base% -> cur% (-Xpp)`. Note which tool(s) dropped and by how much.
+
+### 2. Reproduce locally
+
+Run `npm run eval -- --gate 2 --warn-gate 0.5`. Same thresholds as CI, same output.
+
+### 3. Classify the drop
+
+- **Unintended regression.** Your change broke something. Fix the code, not the baseline.
+- **Intentional trade-off** (e.g. a better chunking strategy that costs 3pp on keyword-only queries but wins 8pp on semantic-only). Land the improvement, then bless.
+- **Gold set is wrong.** The query expected the old behavior. Edit `test/retrieval/gold.json`, re-bless.
+
+### 4. Bless a new baseline (only if appropriate)
+
+If the shift is intentional, run `npm run eval:bless` and commit the updated `baseline.json` in the same PR as the change that caused the shift. Call it out in the PR description — blessing a baseline without explaining why is the main way retrieval decay sneaks in.
+
+### Verify
+
+Rerun `npm run eval` — it should now pass with `✓ No retrieval regression.` on stdout and exit 0. If CI was the trigger, push the commit and confirm the workflow goes green.
+
+### When the eval warns (not fails)
 
 A warn-tier drop (0.5-2pp) is a yellow flag, not a blocker. Read the annotation, decide whether to investigate or ignore. The baseline is unchanged — if a subsequent PR pushes the same tool another 1pp, it becomes a fail.
 
@@ -70,6 +86,6 @@ The step runs after the vault lint and before the other retrieval assertions. Th
 
 ## Related
 
-- [[claude-code-vault/architecture/retrieval]] — how keyword / semantic / chunk search are layered.
+- [[claude-code-vault/architecture/embeddings-pipeline]] — how keyword / semantic / chunk search are layered.
 - [[claude-code-vault/runbooks/npm-scripts]] — every script in `package.json`.
 - Issue #15 (eval harness), #28 (this gate), #25 (query-miss log for discovering gold-set gaps).

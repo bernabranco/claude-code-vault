@@ -71,9 +71,9 @@ function parseArgs(argv) {
     console.error(`--warn-gate must be a non-negative number (got ${args.warnGate})`);
     process.exit(2);
   }
-  if (args.warnGate > args.gate) {
+  if (args.warnGate >= args.gate) {
     console.error(
-      `--warn-gate (${args.warnGate}pp) must be <= --gate (${args.gate}pp)`,
+      `error: --warn-gate (${args.warnGate}) must be less than --gate (${args.gate})`,
     );
     process.exit(2);
   }
