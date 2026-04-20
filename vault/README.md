@@ -61,7 +61,7 @@ All fields are optional except where noted; missing fields fall back to sensible
 | `date` | optional | `YYYY-MM-DD` | When the note was authored. Used by `after`/`before` filters. |
 | `description` | optional | string | One-line blurb shown in search results / list views |
 | `summary` | optional | string | Longer TL;DR. Falls back to `description` when absent. Future: pinned as chunk-0. |
-| `status` | optional | `draft \| current \| stale \| deprecated` | Defaults to `current`. Drives status-aware retrieval (future). |
+| `status` | optional | `draft \| current \| stale \| deprecated` | Defaults to `current`. **Drives status-aware retrieval**: `deprecated` notes are excluded from search by default; `stale` notes are downranked by 0.7. |
 | `type` | optional | `adr \| feature \| gotcha \| runbook \| glossary \| overview \| architecture \| research` | Enables typed-note schemas (future). Unknown values warn on stderr. |
 | `lastVerified` | optional | `YYYY-MM-DD` | Last time the note's claims were checked against reality. Distinct from file mtime. |
 
@@ -81,6 +81,16 @@ lastVerified: 2026-04-20
 
 # Note Content
 ```
+
+## Status-aware retrieval
+
+All search APIs (`vault.search`, `semanticSearch`, `searchChunks`, and the four MCP search tools) honor the `status` field by default:
+
+- **`status: deprecated`** — excluded from results. The note is still indexed and linkable; it just doesn't surface during search. Pass `includeDeprecated: true` (MCP) or `--include-deprecated` (CLI) to see it.
+- **`status: stale`** — kept in results but with similarity (or relevance) multiplied by `staleWeight` (default `0.7`). Tune with `staleWeight: <0..1>` (MCP) or `--stale-weight <n>` (CLI). Setting `1.0` disables the downrank.
+- **`status: current`** and **`status: draft`** — unchanged.
+
+The intent: prevent agents from quoting deprecated docs as if they're current, and bias retrieval toward fresher content without hard-excluding stale notes that may still be the best available answer.
 
 ## Per-type note schemas
 

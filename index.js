@@ -183,6 +183,8 @@ program
 program
   .command("search <query>")
   .option("--limit <n>", "Max results", "10")
+  .option("--include-deprecated", "Include notes with status: deprecated")
+  .option("--stale-weight <n>", "Multiplier applied to status: stale relevance", "0.7")
   .option("--json", "Output as JSON")
   .description("Search vault")
   .action(async (query, options) => {
@@ -191,7 +193,12 @@ program
     await vault.reindex();
 
     const limit = parseInt(options.limit);
-    const results = vault.search(query).slice(0, limit);
+    const results = vault
+      .search(query, {
+        includeDeprecated: options.includeDeprecated,
+        staleWeight: parseFloat(options.staleWeight),
+      })
+      .slice(0, limit);
 
     if (options.json) {
       console.log(JSON.stringify(results, null, 2));
@@ -533,6 +540,8 @@ program
   .option("--after <date>", "Restrict to notes with frontmatter date >= YYYY-MM-DD")
   .option("--before <date>", "Restrict to notes with frontmatter date <= YYYY-MM-DD")
   .option("--hyde", "Expand query with a hypothetical answer (needs ANTHROPIC_API_KEY)")
+  .option("--include-deprecated", "Include notes with status: deprecated")
+  .option("--stale-weight <n>", "Multiplier applied to status: stale similarity", "0.7")
   .option("--json", "Output as JSON")
   .description("Search vault by meaning (note-level, local embeddings)")
   .action(async (query, options) => {
@@ -545,6 +554,8 @@ program
       after: options.after,
       before: options.before,
       hyde: options.hyde,
+      includeDeprecated: options.includeDeprecated,
+      staleWeight: parseFloat(options.staleWeight),
     });
     db.close();
 
@@ -567,6 +578,8 @@ program
   .option("--after <date>", "Restrict to notes with frontmatter date >= YYYY-MM-DD")
   .option("--before <date>", "Restrict to notes with frontmatter date <= YYYY-MM-DD")
   .option("--hyde", "Expand query with a hypothetical answer (needs ANTHROPIC_API_KEY)")
+  .option("--include-deprecated", "Include notes with status: deprecated")
+  .option("--stale-weight <n>", "Multiplier applied to status: stale similarity", "0.7")
   .option("--json", "Output as JSON")
   .description("Search vault at paragraph/section level (chunk retrieval)")
   .action(async (query, options) => {
@@ -579,6 +592,8 @@ program
       after: options.after,
       before: options.before,
       hyde: options.hyde,
+      includeDeprecated: options.includeDeprecated,
+      staleWeight: parseFloat(options.staleWeight),
     });
     db.close();
 
@@ -669,6 +684,8 @@ program
   .option("--after <date>", "Restrict to notes with frontmatter date >= YYYY-MM-DD")
   .option("--before <date>", "Restrict to notes with frontmatter date <= YYYY-MM-DD")
   .option("--hyde", "Expand query with a hypothetical answer (needs ANTHROPIC_API_KEY)")
+  .option("--include-deprecated", "Include notes with status: deprecated")
+  .option("--stale-weight <n>", "Multiplier applied to status: stale similarity", "0.7")
   .option("--json", "Output as JSON")
   .description("Search chunks and include graph neighbors of hit notes")
   .action(async (query, options) => {
@@ -682,6 +699,8 @@ program
       after: options.after,
       before: options.before,
       hyde: options.hyde,
+      includeDeprecated: options.includeDeprecated,
+      staleWeight: parseFloat(options.staleWeight),
     });
     const anchorIds = [...new Set(chunks.map((c) => c.noteId))];
     const { neighbors, truncated } =
