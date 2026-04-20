@@ -140,7 +140,7 @@ Vault location defaults to `./vault`; override with `VAULT_DIR` in `.mcp.json` i
 
 ### Response envelope + char budget
 
-The four search/list tools — `vault_search`, `vault_list`, `vault_semantic_search`, `vault_search_chunks` — return a `{ results, truncated }` envelope. Each accepts an optional `maxChars` parameter (default **8000** ≈ 2000 tokens); lower-ranked results are dropped from the bottom to fit. `truncated: true` means at least one result was dropped. The top-ranked item is always returned even if it alone exceeds the budget, so a non-empty search never yields an empty response. The `*_with_context` tools use the same `maxChars`/`truncated` contract for neighbor snippets.
+The four search/list tools — `vault_search`, `vault_list`, `vault_semantic_search`, `vault_search_chunks` — return a `{ results, truncated }` envelope. Each accepts an optional `maxChars` parameter (default **8000** ≈ 2000 tokens); lower-ranked results are dropped from the bottom to fit. `truncated: true` means at least one result was dropped. The top-ranked item is always returned even if it alone exceeds the budget, so a non-empty search never yields an empty response. The `*_with_context` tools share the `maxChars` budget and `truncated` flag; their top-level envelope shape differs (domain-specific keys like `chunks`, `neighbors`, `note`).
 
 ### Semantic search + chunk retrieval
 
