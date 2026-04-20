@@ -9,7 +9,7 @@
 //     "hooks": {
 //       "PreToolUse": [
 //         {
-//           "matcher": "Agent",
+//           "matcher": "Agent|Task",
 //           "hooks": [{
 //             "type": "command",
 //             "command": "node ${CLAUDE_PROJECT_DIR}/node_modules/claude-code-vault/hooks/vault-first-subagent.mjs"
@@ -32,7 +32,8 @@
 //   CLAUDE_VAULT_HOOK_DISABLE=1   — disable entirely
 //   CLAUDE_VAULT_SUBAGENT_LOOKBACK=N — override the 20-tool-use lookback window
 
-import { readFileSync, statSync } from "node:fs";
+import { closeSync, openSync, readFileSync, readSync, statSync } from "node:fs";
+import { isAbsolute } from "node:path";
 
 const DEFAULT_LOOKBACK = 20;
 const MAX_TAIL_BYTES = 256 * 1024; // Cap transcript read to keep work bounded.
@@ -45,14 +46,36 @@ function readStdinSync() {
   }
 }
 
+function isSafeTranscriptPath(p) {
+  // Accept only absolute paths to a .jsonl file. transcript_path comes from
+  // Claude Code; a malformed value must not cause us to read arbitrary files.
+  return typeof p === "string" && isAbsolute(p) && p.endsWith(".jsonl");
+}
+
 function readTranscriptTail(transcriptPath) {
+  // Truly bounded read: open the file, seek to (size - MAX_TAIL_BYTES), read
+  // at most MAX_TAIL_BYTES. Never load the whole transcript into memory even
+  // if it grows into the megabytes.
+  let fd = -1;
   try {
-    const stat = statSync(transcriptPath);
-    const start = Math.max(0, stat.size - MAX_TAIL_BYTES);
-    const raw = readFileSync(transcriptPath, { encoding: "utf-8", flag: "r" });
-    return start === 0 ? raw : raw.slice(start);
+    const size = statSync(transcriptPath).size;
+    const start = Math.max(0, size - MAX_TAIL_BYTES);
+    const len = size - start;
+    if (len <= 0) return "";
+    fd = openSync(transcriptPath, "r");
+    const buf = Buffer.alloc(len);
+    readSync(fd, buf, 0, len, start);
+    return buf.toString("utf-8");
   } catch {
     return "";
+  } finally {
+    if (fd >= 0) {
+      try {
+        closeSync(fd);
+      } catch {
+        /* ignore */
+      }
+    }
   }
 }
 
@@ -73,16 +96,21 @@ function countRecentVaultCalls(transcriptTail, lookback) {
     }
 
     // Claude Code transcripts are JSONL. Each line is typically a message
-    // object. We look for tool_use content blocks in assistant messages.
+    // object. We only count tool_use blocks from assistant messages — user
+    // messages carry tool_result replies which can embed tool_use references
+    // that must not be counted as fresh invocations.
     const message = entry?.message ?? entry;
+    if (message?.role && message.role !== "assistant") continue;
     const content = message?.content;
     if (!Array.isArray(content)) continue;
 
     for (const block of content) {
       if (block?.type !== "tool_use") continue;
       toolUses++;
+      // MCP-namespaced form: mcp__<server>__vault_<name>. The startsWith
+      // branch covers direct (non-MCP) invocation used in tests.
       const name = String(block.name || "");
-      if (name.startsWith("vault_") || name.includes("__vault_")) {
+      if (name.includes("__vault_") || name.startsWith("vault_")) {
         vaultUses++;
       }
       if (toolUses >= lookback) break;
@@ -111,19 +139,21 @@ function emitBlock(reason) {
 }
 
 function main() {
-  if (process.env.CLAUDE_VAULT_HOOK_DISABLE === "1") emitAllow();
+  // emitAllow/emitBlock below both call process.exit(0) — these guards rely on
+  // that to short-circuit. Any future refactor must preserve that invariant.
+  if (process.env.CLAUDE_VAULT_HOOK_DISABLE === "1") return emitAllow();
 
   let payload;
   try {
     payload = JSON.parse(readStdinSync() || "{}");
   } catch {
-    emitAllow();
+    return emitAllow();
   }
 
-  if (payload.tool_name !== "Agent" && payload.tool_name !== "Task") emitAllow();
+  if (payload.tool_name !== "Agent" && payload.tool_name !== "Task") return emitAllow();
 
   const transcriptPath = payload.transcript_path;
-  if (!transcriptPath || typeof transcriptPath !== "string") emitAllow();
+  if (!isSafeTranscriptPath(transcriptPath)) return emitAllow();
 
   const lookback = Math.max(
     1,
@@ -134,13 +164,13 @@ function main() {
   );
 
   const tail = readTranscriptTail(transcriptPath);
-  if (!tail) emitAllow(); // Fail-open: no transcript, no evidence, allow.
+  if (!tail) return emitAllow(); // Fail-open: no transcript, no evidence, allow.
 
   const { vaultUses } = countRecentVaultCalls(tail, lookback);
-  if (vaultUses > 0) emitAllow();
+  if (vaultUses > 0) return emitAllow();
 
   const taskDescription = String(payload?.tool_input?.description || payload?.tool_input?.prompt || "")
-    .replaceAll(/[`\u0000-\u001f]/g, " ")
+    .replaceAll(/[`"\u0000-\u001f]/g, " ")
     .slice(0, 200)
     .trim();
 
@@ -150,7 +180,7 @@ function main() {
     "and will re-derive patterns already documented in the vault.",
     "",
     "Before spawning, call vault_semantic_search on the task statement",
-    taskDescription ? `(e.g. query: "${taskDescription}") ` : "",
+    taskDescription ? `(e.g. query: ${JSON.stringify(taskDescription)}) ` : "",
     "and pass the top 2-3 hits into the subagent's prompt as ground truth.",
     "",
     "To bypass for this session: export CLAUDE_VAULT_HOOK_DISABLE=1",
