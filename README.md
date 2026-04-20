@@ -138,6 +138,10 @@ Idempotent: re-running skips existing files. After it finishes, restart Claude C
 
 Vault location defaults to `./vault`; override with `VAULT_DIR` in `.mcp.json` if needed.
 
+### Response envelope + char budget
+
+The four search/list tools — `vault_search`, `vault_list`, `vault_semantic_search`, `vault_search_chunks` — return a `{ results, truncated }` envelope. Each accepts an optional `maxChars` parameter (default **8000** ≈ 2000 tokens); lower-ranked results are dropped from the bottom to fit. `truncated: true` means at least one result was dropped. The top-ranked item is always returned even if it alone exceeds the budget, so a non-empty search never yields an empty response. The `*_with_context` tools share the `maxChars` budget and `truncated` flag; their top-level envelope shape differs (domain-specific keys like `chunks`, `neighbors`, `note`).
+
 ### Semantic search + chunk retrieval
 
 Embeddings run locally via `@huggingface/transformers` + `sqlite-vec` — no API key, no cloud. Notes are chunked on markdown heading boundaries (a chunk = text under one heading, bounded to 100–1500 chars with paragraph-level splitting for oversized sections). Each chunk carries a heading breadcrumb (`# Title > ## Section > ### Subsection`) and any wiki-links it contains. First startup downloads ~22MB of ONNX model weights to `.vault-cache/`; subsequent runs only re-embed notes whose `lastModified` changed.
