@@ -109,6 +109,17 @@ Scaffold a new note with the right shape via `claude-code-vault add <path> "<tit
 
 Types not in the table above warn as `unknown-type`. See [[claude-code-vault/gotchas/gotchas]] for the full enum.
 
+## Write-back MCP tools
+
+Agents can author notes directly through two MCP tools (the CLI does not currently wrap them — use MCP):
+
+- **`vault_create_note`** — create a new note. Required: `id`, `type`, `title`, `body`. Optional: `tags`, `description`, `summary`, `status` (defaults to `current`). Fails on id collision, missing required fields, unknown status, or unresolved wiki-links in the body. `date` and `lastVerified` are stamped to today.
+- **`vault_write`** — update an existing note. `content` may be either full markdown with a leading `---` frontmatter block (merge-patched over existing frontmatter; body replaced) or body-only markdown (existing frontmatter preserved; body replaced). Fails if the note doesn't exist, the body is empty, or the body introduces unresolved wiki-links.
+
+Both tools write atomically (tmp-file + rename), then reindex the vault and resync embeddings so the write is immediately searchable. Both return the note as read back from disk.
+
+Use these to keep agent-authored content subject to the same schema and link-integrity rules as hand-written notes.
+
 ## Starting a new project
 
 1. `mkdir vault/new-project/`
