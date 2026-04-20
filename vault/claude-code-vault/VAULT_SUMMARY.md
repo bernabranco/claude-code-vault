@@ -18,6 +18,8 @@ This vault doubles as documentation for `claude-code-vault` itself and as the re
 - New here? → [[claude-code-vault/overview]]
 - Want to use the search API? → [[claude-code-vault/features/semantic-search]]
 - Hitting an install or runtime error? → [[claude-code-vault/gotchas/gotchas]]
+- Cutting a release? → [[claude-code-vault/runbooks/publish-release]]
+- Confused by a term? → [[claude-code-vault/glossary/core-terms]]
 - Curious *why* the stack looks the way it does? → [[claude-code-vault/adrs/adr-001-local-first-embeddings]]
 - Looking ahead? → [[claude-code-vault/research/roadmap]]
 
@@ -27,4 +29,6 @@ This vault doubles as documentation for `claude-code-vault` itself and as the re
 - `architecture/` — how the moving parts fit together
 - `features/` — user-facing capabilities and how to invoke them
 - `gotchas/` — real failure modes and their fixes
+- `runbooks/` — step-by-step operational procedures
+- `glossary/` — canonical definitions of domain vocabulary
 - `research/` — open questions and forward-looking notes

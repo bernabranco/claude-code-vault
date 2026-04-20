@@ -323,8 +323,12 @@ program
 // ===== ADD =====
 program
   .command("add <path> <title>")
+  .option(
+    "--type <t>",
+    "Note type (adr | feature | gotcha | runbook | glossary). Scaffolds a per-type template."
+  )
   .description("Create a new note")
-  .action(async (pathStr, title) => {
+  .action(async (pathStr, title, options) => {
     const vaultDir = program.opts().vault;
     const slug = title
       .toLowerCase()
@@ -342,10 +346,14 @@ program
 
     await fs.mkdir(path.dirname(filePath), { recursive: true });
 
-    const pathParts = pathStr.split("/");
-    const tags = pathParts.slice(0, 2);
-
-    const content = `---
+    let content;
+    if (options.type) {
+      const { templateFor } = await import("./lib/schemas.js");
+      content = templateFor(options.type, title);
+    } else {
+      const pathParts = pathStr.split("/");
+      const tags = pathParts.slice(0, 2);
+      content = `---
 title: ${title}
 tags: [${tags.join(", ")}]
 date: ${new Date().toISOString().split("T")[0]}
@@ -354,6 +362,7 @@ description: ""
 
 # ${title}
 `;
+    }
 
     await fs.writeFile(filePath, content);
     console.log(`✓ Created ${filePath}`);
