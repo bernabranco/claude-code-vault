@@ -190,6 +190,28 @@ Wire it into `.claude/settings.json`:
 
 On the **first** Grep or Glob per session, the hook emits a reminder with `vault_semantic_search` pre-formulated from the search pattern. Every subsequent Grep/Glob is silent — this is a once-per-session nudge, not a gate. Never blocks the underlying tool. State lives under the OS temp dir at `claude-code-vault-hook-state/<session_id>.seen` (sanitized). To disable, export `CLAUDE_VAULT_HOOK_DISABLE=1` in the shell Claude Code inherits.
 
+### Subagent gate (stronger enforcement)
+
+A second hook **blocks** subagent spawns when no `vault_*` tool has been called in the recent conversation. Subagents don't inherit CLAUDE.md and start cold, so spawning without vault context usually wastes tokens re-deriving what's already documented.
+
+```json
+{
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Agent|Task",
+        "hooks": [{
+          "type": "command",
+          "command": "node ${CLAUDE_PROJECT_DIR}/node_modules/claude-code-vault/hooks/vault-first-subagent.mjs"
+        }]
+      }
+    ]
+  }
+}
+```
+
+The hook reads the last ~256 KB of Claude Code's transcript, scans the last 20 tool uses (override with `CLAUDE_VAULT_SUBAGENT_LOOKBACK=N`), and allows the spawn if any `vault_*` tool appears. Otherwise it denies with a reason suggesting the vault query pre-formulated from the subagent's task description. Fails open on any error — missing transcript, parse failure, etc. — so a broken hook can never brick your workflow. Disable with `CLAUDE_VAULT_HOOK_DISABLE=1` (same env var as the Grep/Glob nudge).
+
 ## Roadmap
 
 Full roadmap tracker: **[#33 — LLM-first documentation](https://github.com/bernabranco/claude-code-vault/issues/33)**.
