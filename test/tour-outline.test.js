@@ -4,10 +4,11 @@
  *
  * Exercises:
  *   - computePageRank: monotonicity (hub > leaf), empty vault, deprecated skip,
- *     stale downweight, project prefix filter semantics.
+ *     stale downweight, folder prefix filter semantics, wiki-link dedupe.
  *   - extractOutline: maxDepth, code-fence skipping (``` and ~~~), frontmatter.
  *   - tour envelope respects maxChars (applyCharBudget integration).
- *   - outline truncation marker appears when blocks exceed maxChars.
+ *   - fitOutlineBlocks: truncation marker appears when blocks exceed maxChars;
+ *     at-least-one contract for oversize single block.
  */
 import fs from "fs";
 import fsp from "fs/promises";
@@ -15,7 +16,7 @@ import os from "os";
 import path from "path";
 import { Vault } from "../lib/vault.js";
 import { computePageRank } from "../lib/graph.js";
-import { extractOutline } from "../lib/outline.js";
+import { extractOutline, fitOutlineBlocks } from "../lib/outline.js";
 import { applyCharBudget } from "../lib/budgets.js";
 
 const ROOT = path.join(os.tmpdir(), `vault-tour-outline-${process.pid}`);
@@ -219,7 +220,7 @@ See [[demo/hub]].
     `stale (${staleScore.toFixed(6)}) penalized vs current (${currentScore.toFixed(6)})`
   );
 
-  process.stderr.write("\nproject id-prefix filter semantics\n");
+  process.stderr.write("\nfolder id-prefix filter semantics\n");
   await writeNote(
     "other-proj/note.md",
     `---
@@ -233,27 +234,64 @@ status: current
 `
   );
   vault = await makeVault();
-  // Emulate the mcp filter: prefix = project + "/"; match id === project OR startsWith prefix.
-  const filterByProject = (noteId, project) => {
-    const prefix = project.endsWith("/") ? project : project + "/";
-    return noteId === project || noteId.startsWith(prefix);
+  // Emulate the mcp filter: prefix = folder + "/"; match id === folder OR startsWith prefix.
+  const filterByFolder = (noteId, folder) => {
+    const prefix = folder.endsWith("/") ? folder : folder + "/";
+    return noteId === folder || noteId.startsWith(prefix);
   };
   const demoMatches = vault.index
-    .filter((n) => filterByProject(n.id, "demo"))
+    .filter((n) => filterByFolder(n.id, "demo"))
     .map((n) => n.id);
   assert(
     demoMatches.every((id) => id.startsWith("demo/")),
-    "project=demo matches only demo/* ids"
+    "folder=demo matches only demo/* ids"
   );
   const otherMatches = vault.index
-    .filter((n) => filterByProject(n.id, "other-proj"))
+    .filter((n) => filterByFolder(n.id, "other-proj"))
     .map((n) => n.id);
   assert(
     otherMatches.length === 1 && otherMatches[0] === "other-proj/note",
-    "project=other-proj matches single note"
+    "folder=other-proj matches single note"
   );
-  // No project = no filter: returns all.
+  // No folder = no filter: returns all.
   assert(vault.index.length >= 7, "vault has many notes overall (no filter)");
+
+  process.stderr.write("\ncomputePageRank: repeated wiki-links from same source are deduped\n");
+  // Two isolated mini-vaults: in one, source links to target 1× — in the other, 5×.
+  // The dedupe contract says both should produce the same rank for `target`.
+  const singleRoot = path.join(os.tmpdir(), `vault-dedupe-single-${process.pid}`);
+  const repeatRoot = path.join(os.tmpdir(), `vault-dedupe-repeat-${process.pid}`);
+  for (const root of [singleRoot, repeatRoot]) {
+    if (fs.existsSync(root)) fs.rmSync(root, { recursive: true, force: true });
+    fs.mkdirSync(root, { recursive: true });
+  }
+  const targetBody = `---\nid: target\ntitle: Target\ntype: feature\nstatus: current\n---\n\n# Target\n\nHub.\n`;
+  await fsp.writeFile(path.join(singleRoot, "target.md"), targetBody, "utf-8");
+  await fsp.writeFile(path.join(repeatRoot, "target.md"), targetBody, "utf-8");
+  await fsp.writeFile(
+    path.join(singleRoot, "source.md"),
+    `---\nid: source\ntitle: Source\ntype: feature\nstatus: current\n---\n\n# Source\n\nSee [[target]].\n`,
+    "utf-8"
+  );
+  await fsp.writeFile(
+    path.join(repeatRoot, "source.md"),
+    `---\nid: source\ntitle: Source\ntype: feature\nstatus: current\n---\n\n# Source\n\nSee [[target]] and [[target]] and [[target]] and [[target]] and [[target]].\n`,
+    "utf-8"
+  );
+  const singleVault = new Vault(singleRoot);
+  await singleVault.reindex();
+  const repeatVault = new Vault(repeatRoot);
+  await repeatVault.reindex();
+  const singleRanks = computePageRank(singleVault);
+  const repeatRanks = computePageRank(repeatVault);
+  const singleTargetScore = singleRanks.get("target") ?? 0;
+  const repeatTargetScore = repeatRanks.get("target") ?? 0;
+  assert(
+    Math.abs(singleTargetScore - repeatTargetScore) < 1e-9,
+    `repeated wiki-links deduped: single=${singleTargetScore.toFixed(9)} repeat=${repeatTargetScore.toFixed(9)}`
+  );
+  fs.rmSync(singleRoot, { recursive: true, force: true });
+  fs.rmSync(repeatRoot, { recursive: true, force: true });
 
   process.stderr.write("\nempty-edge vault: no links → no throw, zero-ish scores\n");
   const emptyRoot = path.join(os.tmpdir(), `vault-empty-${process.pid}`);
@@ -327,7 +365,7 @@ status: current
   assert(envelope.results.length < bigItems.length, "envelope dropped lower-ranked items");
   assert(envelope.results.length >= 1, "envelope keeps at least top item");
 
-  process.stderr.write("\noutline truncation: marker appears when over budget\n");
+  process.stderr.write("\nfitOutlineBlocks: truncation marker appears when over budget\n");
   // Synthesize blocks like the mcp tool would produce.
   const fatBlocks = [];
   for (let i = 0; i < 8; i++) {
@@ -335,32 +373,23 @@ status: current
       `# Note ${i} (demo/note-${i})\n## Heading ${i} A\n## Heading ${i} B\n## Heading ${i} C`
     );
   }
-  // Emulate fitOutlineBlocks with a tight budget.
-  const fit = (blocks, budget) => {
-    let text = "";
-    let included = 0;
-    for (const block of blocks) {
-      const next = included === 0 ? block : text + "\n\n" + block;
-      if (next.length > budget && included > 0) break;
-      text = next;
-      included += 1;
-    }
-    const omitted = blocks.length - included;
-    if (omitted > 0) {
-      const suffix = omitted === 1 ? "" : "s";
-      text += `\n\n[truncated: ${omitted} note${suffix} omitted]`;
-    }
-    return text;
-  };
-  const tight = fit(fatBlocks, 200);
-  assert(/\[truncated: \d+ notes? omitted\]/.test(tight), "truncation marker present");
-  assert(tight.includes("# Note 0 (demo/note-0)"), "first note preserved even with tight budget");
+  const tight = fitOutlineBlocks(fatBlocks, 200);
+  assert(/\[truncated: \d+ notes? omitted\]/.test(tight.text), "truncation marker present");
+  assert(tight.text.includes("# Note 0 (demo/note-0)"), "first note preserved even with tight budget");
+  assert(tight.omitted > 0, "fitOutlineBlocks reports omitted > 0");
+  assert(tight.included + tight.omitted === fatBlocks.length, "included + omitted = total blocks");
 
-  process.stderr.write("\noutline: single oversize block still returned (at-least-one contract)\n");
+  process.stderr.write("\nfitOutlineBlocks: single oversize block still returned (at-least-one contract)\n");
   const huge = "# Huge (demo/huge)\n" + "## Section\n".repeat(500);
-  const fitHuge = fit([huge], 100);
-  assert(fitHuge.startsWith("# Huge"), "single oversize block is returned unsliced");
-  assert(!/\[truncated:/.test(fitHuge), "no truncation marker when only one block and nothing omitted");
+  const fitHuge = fitOutlineBlocks([huge], 100);
+  assert(fitHuge.text.startsWith("# Huge"), "single oversize block is returned unsliced");
+  assert(!/\[truncated:/.test(fitHuge.text), "no truncation marker when only one block and nothing omitted");
+  assert(fitHuge.omitted === 0 && fitHuge.included === 1, "fitOutlineBlocks counts single block correctly");
+
+  process.stderr.write("\nfitOutlineBlocks: empty input returns empty\n");
+  const emptyFit = fitOutlineBlocks([], 1000);
+  assert(emptyFit.text === "", "empty blocks list → empty text");
+  assert(emptyFit.included === 0 && emptyFit.omitted === 0, "empty blocks list → zero counts");
 
   teardown();
   if (failed > 0) {
