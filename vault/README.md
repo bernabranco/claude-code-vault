@@ -130,6 +130,23 @@ Draft stubs that haven't been filled in after **`staleStubDays`** (default 7) ar
 
 Use these to keep agent-authored content subject to the same schema and link-integrity rules as hand-written notes.
 
+## Query-miss log (content-gap discovery)
+
+Turn on with `VAULT_QUERY_LOG=1` in the MCP env. Every call to the four search tools (`vault_search`, `vault_semantic_search`, `vault_search_chunks`, `vault_search_chunks_with_context`) appends one JSONL line to `.vault-cache/query-log.jsonl` with `{ timestamp, tool, query, resultCount, topScore, options }`. Off by default, local-only, gitignored. Rotates at 10 MB — one rotated file (`.jsonl.1`) kept.
+
+The intent: surface queries that found nothing or nothing good, so you can see what content the vault is missing.
+
+Inspect with the CLI:
+
+- `claude-code-vault query-log` — top empty/low-score queries grouped by normalized text
+- `claude-code-vault query-log --misses` — chronological miss entries
+- `claude-code-vault query-log --tail 20` — last N entries (all, not just misses)
+- `claude-code-vault query-log --min-score 0.2` — tune the "nothing good" threshold (default 0.3)
+- `claude-code-vault query-log --since 2026-04-01` — only recent entries
+- `claude-code-vault query-log --clear` — delete both the active and rotated log
+
+Logging failures are warned once to stderr then silenced for the rest of the process — search results never block on disk I/O.
+
 ## Starting a new project
 
 1. `mkdir vault/new-project/`
