@@ -1,18 +1,21 @@
 #!/usr/bin/env node
 /**
- * Retrieval eval harness — issue #15.
+ * Retrieval eval harness — issue #15 + #28.
  *
  * Runs every gold query against keyword / semantic / chunk search and
  * reports recall@5 + MRR@5. Compares against test/retrieval/baseline.json
- * if present, exits non-zero when a tool's recall@5 drops by more than
- * the gate (default 5pp).
+ * if present and applies a two-tier gate:
+ *   - drop > --gate pp (default 2pp) on any tool → fail (exit 1)
+ *   - drop between --warn-gate (default 0.5pp) and --gate pp → warn on
+ *     stderr as a GitHub Actions workflow annotation, exit 0
  *
  * Usage:
- *   node test/retrieval/eval.js                  # eval + diff vs baseline
- *   node test/retrieval/eval.js --update-baseline
- *   node test/retrieval/eval.js --gate 10        # tolerate up to 10pp drop
- *   node test/retrieval/eval.js --json           # machine-readable output
- *   node test/retrieval/eval.js --vault ./vault  # override vault dir
+ *   node test/retrieval/eval.js                     # eval + diff vs baseline
+ *   node test/retrieval/eval.js --update-baseline   # rewrite baseline.json
+ *   node test/retrieval/eval.js --gate 2            # fail threshold in pp
+ *   node test/retrieval/eval.js --warn-gate 0.5     # warn threshold in pp
+ *   node test/retrieval/eval.js --json              # machine-readable output
+ *   node test/retrieval/eval.js --vault ./vault     # override vault dir
  */
 import fs from "fs";
 import path from "path";
@@ -32,7 +35,8 @@ const K = 5;
 function parseArgs(argv) {
   const args = {
     updateBaseline: false,
-    gate: 5,
+    gate: 2,
+    warnGate: 0.5,
     json: false,
     hyde: false,
     vault: path.resolve(__dirname, "..", "..", "vault"),
@@ -45,18 +49,33 @@ function parseArgs(argv) {
     else if (a === "--json") args.json = true;
     else if (a === "--hyde") args.hyde = true;
     else if (a === "--gate") args.gate = Number(argv[++i]);
+    else if (a === "--warn-gate") args.warnGate = Number(argv[++i]);
     else if (a === "--vault") args.vault = path.resolve(argv[++i]);
     else if (a === "--gold") args.gold = path.resolve(argv[++i]);
     else if (a === "--baseline") args.baseline = path.resolve(argv[++i]);
     else if (a === "--help" || a === "-h") {
       console.log(
-        "Usage: node test/retrieval/eval.js [--update-baseline] [--gate N] [--json] [--hyde] [--vault DIR] [--gold FILE] [--baseline FILE]",
+        "Usage: node test/retrieval/eval.js [--update-baseline] [--gate N] [--warn-gate N] [--json] [--hyde] [--vault DIR] [--gold FILE] [--baseline FILE]",
       );
       process.exit(0);
     } else {
       console.error(`Unknown arg: ${a}`);
       process.exit(2);
     }
+  }
+  if (!Number.isFinite(args.gate) || args.gate < 0) {
+    console.error(`--gate must be a non-negative number (got ${args.gate})`);
+    process.exit(2);
+  }
+  if (!Number.isFinite(args.warnGate) || args.warnGate < 0) {
+    console.error(`--warn-gate must be a non-negative number (got ${args.warnGate})`);
+    process.exit(2);
+  }
+  if (args.warnGate > args.gate) {
+    console.error(
+      `--warn-gate (${args.warnGate}pp) must be <= --gate (${args.gate}pp)`,
+    );
+    process.exit(2);
   }
   return args;
 }
@@ -261,19 +280,23 @@ function fmtDelta(n, isPct) {
   return isPct ? `${sign}${(n * 100).toFixed(1)}pp` : `${sign}${n.toFixed(3)}`;
 }
 
-function checkRegression(result, baseline, gatePp) {
-  if (!baseline) return { ok: true, regressions: [] };
-  const regressions = [];
+function checkRegression(result, baseline, failGatePp, warnGatePp) {
+  if (!baseline) return { ok: true, failures: [], warnings: [] };
+  const failures = [];
+  const warnings = [];
   for (const tool of Object.keys(result.summary)) {
     const cur = result.summary[tool].overall.recallAt5;
     const base = baseline.summary?.[tool]?.overall?.recallAt5;
     if (base === undefined) continue;
     const dropPp = (base - cur) * 100;
-    if (dropPp > gatePp) {
-      regressions.push({ tool, basePct: base * 100, curPct: cur * 100, dropPp });
+    const entry = { tool, basePct: base * 100, curPct: cur * 100, dropPp };
+    if (dropPp > failGatePp) {
+      failures.push(entry);
+    } else if (dropPp > warnGatePp) {
+      warnings.push(entry);
     }
   }
-  return { ok: regressions.length === 0, regressions };
+  return { ok: failures.length === 0, failures, warnings };
 }
 
 async function main() {
@@ -302,19 +325,46 @@ async function main() {
   }
 
   if (!opts.updateBaseline) {
-    const { ok, regressions } = checkRegression(result, baseline, opts.gate);
-    if (!ok) {
+    reportRegressions(result, baseline, opts);
+  }
+}
+
+function reportRegressions(result, baseline, opts) {
+  const { ok, failures, warnings } = checkRegression(
+    result,
+    baseline,
+    opts.gate,
+    opts.warnGate,
+  );
+
+  const baselineRel =
+    path.relative(process.cwd(), opts.baseline) || opts.baseline;
+
+  for (const w of warnings) {
+    const msg = `${w.tool}: recall@5 ${w.basePct.toFixed(1)}% -> ${w.curPct.toFixed(1)}% (-${w.dropPp.toFixed(1)}pp, within warn zone ${opts.warnGate}-${opts.gate}pp)`;
+    // GitHub Actions workflow command on stderr — shows up as a PR annotation.
+    process.stderr.write(`::warning file=${baselineRel}::${msg}\n`);
+  }
+
+  if (!ok) {
+    console.error(
+      `\n✗ Regression: ${failures.length} tool(s) dropped recall@5 by more than ${opts.gate}pp`,
+    );
+    for (const r of failures) {
       console.error(
-        `\n✗ Regression: ${regressions.length} tool(s) dropped recall@5 by more than ${opts.gate}pp`,
+        `  ${r.tool}: ${r.basePct.toFixed(1)}% → ${r.curPct.toFixed(1)}% (-${r.dropPp.toFixed(1)}pp)`,
       );
-      for (const r of regressions) {
-        console.error(
-          `  ${r.tool}: ${r.basePct.toFixed(1)}% → ${r.curPct.toFixed(1)}% (-${r.dropPp.toFixed(1)}pp)`,
-        );
-      }
-      process.exit(1);
     }
-    if (baseline) console.log("✓ No retrieval regression.");
+    process.exit(1);
+  }
+
+  if (!baseline) return;
+  if (warnings.length > 0) {
+    console.log(
+      `⚠ ${warnings.length} tool(s) in warn zone (${opts.warnGate}-${opts.gate}pp drop). See stderr annotations.`,
+    );
+  } else {
+    console.log("✓ No retrieval regression.");
   }
 }
 
