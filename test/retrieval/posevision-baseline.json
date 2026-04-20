@@ -1,0 +1,123 @@
+{
+  "generatedAt": "2026-04-20T16:08:50.383Z",
+  "queryCount": 27,
+  "summary": {
+    "keyword": {
+      "overall": {
+        "recallAt5": 0.6957,
+        "mrrAt5": 0.358,
+        "count": 23
+      },
+      "byCategory": {
+        "keyword-only": {
+          "recallAt5": 0.8333,
+          "mrrAt5": 0.3389,
+          "count": 6
+        },
+        "semantic-only": {
+          "recallAt5": 0.6,
+          "mrrAt5": 0.3333,
+          "count": 5
+        },
+        "vocabulary-gap": {
+          "recallAt5": 0.75,
+          "mrrAt5": 0.3625,
+          "count": 4
+        },
+        "graph-context": {
+          "recallAt5": 0,
+          "mrrAt5": 0,
+          "count": 3
+        },
+        "multi-section": {
+          "recallAt5": 1,
+          "mrrAt5": 0.6167,
+          "count": 5
+        },
+        "filter-scope": {
+          "recallAt5": 0,
+          "mrrAt5": 0,
+          "count": 0
+        }
+      }
+    },
+    "semantic": {
+      "overall": {
+        "recallAt5": 0.9259,
+        "mrrAt5": 0.634,
+        "count": 27
+      },
+      "byCategory": {
+        "keyword-only": {
+          "recallAt5": 1,
+          "mrrAt5": 0.4361,
+          "count": 6
+        },
+        "semantic-only": {
+          "recallAt5": 1,
+          "mrrAt5": 0.6167,
+          "count": 5
+        },
+        "vocabulary-gap": {
+          "recallAt5": 1,
+          "mrrAt5": 0.7083,
+          "count": 4
+        },
+        "graph-context": {
+          "recallAt5": 0.6667,
+          "mrrAt5": 0.4167,
+          "count": 3
+        },
+        "multi-section": {
+          "recallAt5": 0.8,
+          "mrrAt5": 0.6667,
+          "count": 5
+        },
+        "filter-scope": {
+          "recallAt5": 1,
+          "mrrAt5": 1,
+          "count": 4
+        }
+      }
+    },
+    "chunks": {
+      "overall": {
+        "recallAt5": 0.7778,
+        "mrrAt5": 0.5488,
+        "count": 27
+      },
+      "byCategory": {
+        "keyword-only": {
+          "recallAt5": 0.6667,
+          "mrrAt5": 0.3111,
+          "count": 6
+        },
+        "semantic-only": {
+          "recallAt5": 1,
+          "mrrAt5": 0.6,
+          "count": 5
+        },
+        "vocabulary-gap": {
+          "recallAt5": 1,
+          "mrrAt5": 0.675,
+          "count": 4
+        },
+        "graph-context": {
+          "recallAt5": 0.6667,
+          "mrrAt5": 0.4167,
+          "count": 3
+        },
+        "multi-section": {
+          "recallAt5": 0.4,
+          "mrrAt5": 0.4,
+          "count": 5
+        },
+        "filter-scope": {
+          "recallAt5": 1,
+          "mrrAt5": 1,
+          "count": 4
+        }
+      }
+    }
+  }
+}
