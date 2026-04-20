@@ -172,6 +172,93 @@ This is not a glossary — even though it has a heading called RRF it should not
   const empty = resolveJargon("RRF and MRR everywhere", new Map());
   assert(empty.length === 0, "empty glossary returns empty array");
 
+  process.stderr.write("\nCRLF frontmatter is stripped\n");
+  const crlf = resolveJargon(
+    "---\r\ntitle: Something about RRF\r\n---\r\nBody has no jargon here.\r\n",
+    glossary
+  );
+  assert(crlf.length === 0, "CRLF frontmatter mentions ignored");
+
+  process.stderr.write("\nmin term length filter ignores single-char terms\n");
+  await writeNote(
+    "shared/glossary/shorts.md",
+    `---
+id: shared/glossary/shorts
+title: Short
+type: glossary
+status: current
+tags: [glossary]
+terms: [A, BB, CCC]
+---
+
+# Short
+
+## A
+
+Single letter term — should NOT register.
+
+## BB
+
+Two letter term — should register.
+
+## CCC
+
+Three letter term — should register.
+`
+  );
+  let shortsVault = await makeVault();
+  const shortsGlossary = await buildGlossary(shortsVault);
+  assert(!shortsGlossary.has("a"), "single-letter term filtered out");
+  assert(shortsGlossary.has("bb"), "two-letter term registered");
+  assert(shortsGlossary.has("ccc"), "three-letter term registered");
+
+  process.stderr.write("\nresolveJargon caps at MAX_RESOLVED_TERMS\n");
+  const manyTerms = [];
+  for (let i = 0; i < 30; i++) manyTerms.push(`Termword${String.fromCharCode(65 + i)}x`);
+  const termsYaml = `[${manyTerms.join(", ")}]`;
+  await writeNote(
+    "shared/glossary/many.md",
+    `---
+id: shared/glossary/many
+title: Many
+type: glossary
+status: current
+tags: [glossary]
+terms: ${termsYaml}
+summary: bulk terms
+---
+
+# Many
+`
+  );
+  let manyVault = await makeVault();
+  const manyGlossary = await buildGlossary(manyVault);
+  const prose = manyTerms.join(" and ");
+  const capped = resolveJargon(prose, manyGlossary);
+  assert(capped.length === 20, `capped at 20 resolved terms (got ${capped.length})`);
+
+  process.stderr.write("\nregex-metachar term is escaped\n");
+  await writeNote(
+    "shared/glossary/meta.md",
+    `---
+id: shared/glossary/meta
+title: Meta
+type: glossary
+status: current
+tags: [glossary]
+terms: [C++]
+summary: C plus plus
+---
+
+# Meta
+`
+  );
+  let metaVault = await makeVault();
+  const metaGlossary = await buildGlossary(metaVault);
+  const metaHit = resolveJargon("We ship C++ code here.", metaGlossary);
+  assert(metaHit.length === 1, "C++ matched literally");
+  assert(metaHit[0].term === "C++", "C++ preserved");
+
   process.stderr.write("\nmulti-word terms match with whitespace\n");
   await writeNote(
     "shared/glossary/multi.md",
@@ -202,6 +289,13 @@ Retrieval by vector similarity.
   assert(multiTerms.length === 2, "two multi-word terms matched");
   assert(multiTerms[0] === "Cross-encoder", "Cross-encoder matched hyphenated");
   assert(multiTerms[1] === "Dense retrieval", "Dense retrieval matched with space");
+
+  process.stderr.write("\nhyphen-adjacent mentions resolve (non-word boundary)\n");
+  const hyphen = resolveJargon("a cross-encoder-pass stage", glossary);
+  assert(
+    hyphen.some((r) => r.term === "Cross-encoder"),
+    "Cross-encoder matched inside cross-encoder-pass"
+  );
 
   teardown();
   if (failed > 0) {
