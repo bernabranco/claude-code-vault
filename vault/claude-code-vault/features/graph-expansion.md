@@ -11,16 +11,24 @@ tags: [graph, wiki-links, related]
 
 # Graph expansion via wiki-links
 
-Wiki-links in note bodies form a directed graph between notes. `vault_related` and `read-with-context` walk that graph to surface neighbors — useful when a single note answers part of a question and the rest lives one hop away.
+## What
 
-## Public surface
+Wiki-links in note bodies form a directed graph between notes. `vault_related` and `read-with-context` walk that graph to surface neighbors — useful when a single note answers part of a question and the rest lives one hop away. Each neighbor comes back with its direction (forward / backward / bidirectional), edge weight, and a short snippet.
+
+## Why
+
+Retrieval over a single note often returns the right *starting point* but not enough surrounding context. The wiki-link graph is a hand-curated signal — when an author writes `[[other-note]]`, they're marking a connection a pure-embedding ranker can't see. Walking that graph complements semantic search (see [[claude-code-vault/features/semantic-search]]) rather than replacing it.
+
+## How
+
+### Public surface
 
 - **CLI:** `claude-code-vault related <id>` and `claude-code-vault read-with-context <id>`
 - **MCP:** the `vault_related` tool
 
 Both accept a `depth` parameter (default 1, capped at 2) and a `limit` on how many neighbors to return.
 
-## What gets returned
+### What gets returned
 
 Each neighbor includes:
 
@@ -30,7 +38,7 @@ Each neighbor includes:
 - `weight` — number of edges between the two notes
 - a short snippet of the neighbor's body so a downstream LLM can decide whether to expand it
 
-## Ranking
+### Ranking
 
 Neighbors are ranked:
 
@@ -39,6 +47,6 @@ Neighbors are ranked:
 3. Then by `lastModified` descending — fresher notes bubble up.
 4. Then by id for determinism.
 
-## When to use depth=2
+### When to use depth=2
 
 Depth 1 is the right default — it returns immediate neighbors and is usually sufficient. Depth 2 is for "what's in the broader neighborhood" — useful when seeding a chat with context, expensive when answering a precise question.

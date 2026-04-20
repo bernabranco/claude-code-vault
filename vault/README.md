@@ -82,6 +82,23 @@ lastVerified: 2026-04-20
 # Note Content
 ```
 
+## Per-type note schemas
+
+When a note sets `type:`, the linter enforces a minimal body schema for that type. The goal is predictable retrieval — chunks have the same breadcrumbs and bold labels across notes of the same kind, so keyword search finds them and LLMs can scan them consistently.
+
+Scaffold a new note with the right shape via `claude-code-vault add <path> "<title>" --type <t>`.
+
+| Type | Required structure | Rationale |
+|---|---|---|
+| `adr` | H2 sections: `## Context`, `## Decision`, `## Alternatives`, `## Consequences` | Standard ADR format; these are the four questions every decision record answers. |
+| `feature` | H2 sections: `## What`, `## Why`, `## How` | Enough to explain a user-visible feature without prescribing a rigid template. |
+| `runbook` | An `## Steps` H2, and at least one `### Verify` H3 subsection | Every step should be independently verifiable — no blind runbooks. |
+| `gotcha` | Each H2 section contains bold labels `**Symptom**`, `**Cause**`, `**Fix**` | Gotchas are scanned under pressure; the labels make the triage info findable. |
+| `glossary` | Frontmatter `terms: [A, B, C]` list, and a matching `## A`, `## B`, `## C` H2 for each | Declarative term list lets the linter catch drift between what's declared and what's defined. |
+| `overview` / `architecture` / `research` | No body schema — only the universal frontmatter rules apply | These are free-form narrative; forcing structure would hurt more than help. |
+
+Types not in the table above warn as `unknown-type`. See [[claude-code-vault/gotchas/gotchas]] for the full enum.
+
 ## Starting a new project
 
 1. `mkdir vault/new-project/`

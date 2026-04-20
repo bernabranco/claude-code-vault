@@ -11,9 +11,21 @@ tags: [search, embeddings, mcp, cli]
 
 # Semantic search
 
-Semantic search returns notes (or chunks) ranked by cosine similarity between the query embedding and the indexed embeddings. Filters are applied **before** ranking — see [[claude-code-vault/architecture/embeddings-pipeline]] for the SQL.
+## What
 
-## From the CLI
+Semantic search returns notes (or chunks) ranked by cosine similarity between the query embedding and the indexed embeddings. Three tools ship today: `semantic-search` (note-level), `search-chunks` (paragraph-level), and `search-with-context` (chunks plus graph neighbors). All three support the same filter set — tag, type, id-prefix, date range.
+
+## Why
+
+Keyword search misses queries that don't share lexical tokens with the target note ("why is install slow" vs. "NODE_MODULE_VERSION mismatch"). Embeddings close that gap without requiring a remote API — the decision to keep embeddings local is recorded in [[claude-code-vault/adrs/adr-001-local-first-embeddings]].
+
+Filters are applied **before** ranking — see [[claude-code-vault/architecture/embeddings-pipeline]] for the SQL — so `--type adr --tag embeddings` is precise, not a best-effort post-filter.
+
+## How
+
+Three entry points, same filter set:
+
+### From the CLI
 
 ```bash
 claude-code-vault semantic-search "why did we choose local embeddings"
@@ -23,7 +35,7 @@ claude-code-vault search-with-context "cache filename bump" --type adr
 
 `semantic-search` collapses to the note level (best for "find me the doc"). `search-chunks` returns individual chunks (best for "find me the paragraph"). `search-with-context` returns chunks plus their neighbors (best for feeding into an LLM context window).
 
-## From MCP
+### From MCP
 
 ```json
 {
@@ -38,7 +50,7 @@ claude-code-vault search-with-context "cache filename bump" --type adr
 
 The same three tools (`vault_semantic_search`, `vault_search_chunks`, `vault_search_chunks_with_context`) all accept the same filter set documented in [[claude-code-vault/architecture/cli]].
 
-## Common filter recipes
+### Common filter recipes
 
 - **"Only ADRs":** `--type adr` (or `"type": "adr"` over MCP).
 - **"Only the auth subsystem":** `--id-prefix auth/` if your notes are organized by folder-as-prefix.
@@ -47,7 +59,7 @@ The same three tools (`vault_semantic_search`, `vault_search_chunks`, `vault_sea
 
 Filters compose — `--type adr --tag embeddings` returns ADRs tagged `embeddings`.
 
-## When to turn on HyDE
+### When to turn on HyDE
 
 HyDE expands the query through a small Anthropic model before embedding it. Add `--hyde` (CLI) or `"hyde": true` (MCP) when:
 
