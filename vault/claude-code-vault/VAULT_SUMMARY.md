@@ -21,6 +21,9 @@ This vault doubles as documentation for `claude-code-vault` itself and as the re
 - Cutting a release? → [[claude-code-vault/runbooks/publish-release]]
 - Confused by a term? → [[claude-code-vault/glossary/core-terms]] or [[shared/glossary/rag-terms]] for cross-project RAG vocabulary
 - Curious *why* the stack looks the way it does? → [[claude-code-vault/adrs/adr-001-local-first-embeddings]]
+- Why MCP descriptions read like routing contracts? → [[claude-code-vault/adrs/adr-006-llm-routing-via-tool-descriptions]]
+- How the orchestrator is pushed vault-first? → [[claude-code-vault/adrs/adr-007-hook-based-vault-enforcement]] + [[claude-code-vault/features/enforcement-hooks]]
+- Spawning a subagent? Read first → [[claude-code-vault/gotchas/subagent-context-isolation]]
 - Looking ahead? → [[claude-code-vault/research/roadmap]]
 
 ## Folders

@@ -1,11 +1,11 @@
 {
-  "generatedAt": "2026-04-19T22:57:24.334Z",
+  "generatedAt": "2026-04-20T22:49:56.015Z",
   "queryCount": 14,
   "summary": {
     "keyword": {
       "overall": {
-        "recallAt5": 0.3333,
-        "mrrAt5": 0.3333,
+        "recallAt5": 0.9167,
+        "mrrAt5": 0.725,
         "count": 12
       },
       "byCategory": {
@@ -15,23 +15,23 @@
           "count": 4
         },
         "semantic-only": {
-          "recallAt5": 0,
-          "mrrAt5": 0,
+          "recallAt5": 0.6667,
+          "mrrAt5": 0.5,
           "count": 3
         },
         "vocabulary-gap": {
-          "recallAt5": 0,
-          "mrrAt5": 0,
+          "recallAt5": 1,
+          "mrrAt5": 0.35,
           "count": 2
         },
         "graph-context": {
-          "recallAt5": 0,
-          "mrrAt5": 0,
+          "recallAt5": 1,
+          "mrrAt5": 0.5,
           "count": 1
         },
         "multi-section": {
-          "recallAt5": 0,
-          "mrrAt5": 0,
+          "recallAt5": 1,
+          "mrrAt5": 1,
           "count": 2
         },
         "filter-scope": {
@@ -44,13 +44,13 @@
     "semantic": {
       "overall": {
         "recallAt5": 0.6429,
-        "mrrAt5": 0.5595,
+        "mrrAt5": 0.4964,
         "count": 14
       },
       "byCategory": {
         "keyword-only": {
           "recallAt5": 1,
-          "mrrAt5": 0.875,
+          "mrrAt5": 0.675,
           "count": 4
         },
         "semantic-only": {
@@ -75,21 +75,21 @@
         },
         "filter-scope": {
           "recallAt5": 0.5,
-          "mrrAt5": 0.1667,
+          "mrrAt5": 0.125,
           "count": 2
         }
       }
     },
     "chunks": {
       "overall": {
-        "recallAt5": 0.6429,
-        "mrrAt5": 0.5595,
+        "recallAt5": 0.5714,
+        "mrrAt5": 0.4786,
         "count": 14
       },
       "byCategory": {
         "keyword-only": {
-          "recallAt5": 1,
-          "mrrAt5": 0.875,
+          "recallAt5": 0.75,
+          "mrrAt5": 0.625,
           "count": 4
         },
         "semantic-only": {
@@ -114,7 +114,7 @@
         },
         "filter-scope": {
           "recallAt5": 0.5,
-          "mrrAt5": 0.1667,
+          "mrrAt5": 0.1,
           "count": 2
         }
       }
