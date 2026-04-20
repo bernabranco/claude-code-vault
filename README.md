@@ -180,7 +180,7 @@ Wire it into `.claude/settings.json`:
         "matcher": "Grep|Glob",
         "hooks": [{
           "type": "command",
-          "command": "node ./node_modules/claude-code-vault/hooks/vault-first-reminder.mjs"
+          "command": "node ${CLAUDE_PROJECT_DIR}/node_modules/claude-code-vault/hooks/vault-first-reminder.mjs"
         }]
       }
     ]
@@ -188,7 +188,7 @@ Wire it into `.claude/settings.json`:
 }
 ```
 
-On the **first** Grep or Glob per session, the hook emits a reminder with `vault_semantic_search` pre-formulated from the search pattern. Every subsequent Grep/Glob is silent — this is a once-per-session nudge, not a gate. Never blocks the underlying tool. State lives in `/tmp/claude-code-vault-hook-state/`. Disable per-session with `CLAUDE_VAULT_HOOK_DISABLE=1`.
+On the **first** Grep or Glob per session, the hook emits a reminder with `vault_semantic_search` pre-formulated from the search pattern. Every subsequent Grep/Glob is silent — this is a once-per-session nudge, not a gate. Never blocks the underlying tool. State lives under the OS temp dir at `claude-code-vault-hook-state/<session_id>.seen` (sanitized). To disable, export `CLAUDE_VAULT_HOOK_DISABLE=1` in the shell Claude Code inherits.
 
 ## Roadmap
 
