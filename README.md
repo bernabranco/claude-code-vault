@@ -212,6 +212,25 @@ A second hook **blocks** subagent spawns when no `vault_*` tool has been called 
 
 The hook reads the last ~256 KB of Claude Code's transcript, scans the last 20 tool uses (override with `CLAUDE_VAULT_SUBAGENT_LOOKBACK=N`), and allows the spawn if any `vault_*` tool appears. Otherwise it denies with a reason suggesting the vault query pre-formulated from the subagent's task description. Fails open on any error — missing transcript, parse failure, etc. — so a broken hook can never brick your workflow. Disable with `CLAUDE_VAULT_HOOK_DISABLE=1` (same env var as the Grep/Glob nudge).
 
+### End-of-session gap report
+
+A third hook closes the write-loop. At session end, it scans the transcript and flags sessions that edited multiple files but never queried the vault — the signal that the next agent will re-derive whatever was just learned.
+
+```json
+{
+  "hooks": {
+    "SessionEnd": [{
+      "hooks": [{
+        "type": "command",
+        "command": "node ${CLAUDE_PROJECT_DIR}/node_modules/claude-code-vault/hooks/vault-gap-report.mjs"
+      }]
+    }]
+  }
+}
+```
+
+If the session edited ≥ `CLAUDE_VAULT_GAP_THRESHOLD` (default 3) distinct files AND called zero `vault_*` tools, the hook prints a concise report to stderr (visible to the user, NOT injected into the model) suggesting `vault_create_note` on the way out. Silent otherwise. Never blocks.
+
 ## Roadmap
 
 Full roadmap tracker: **[#33 — LLM-first documentation](https://github.com/bernabranco/claude-code-vault/issues/33)**.
