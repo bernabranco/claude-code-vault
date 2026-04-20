@@ -48,7 +48,7 @@ jobs:
         run: node index.js lint --format github
 
       - name: Retrieval eval (recall@5 vs baseline)
-        run: node test/retrieval/eval.js --gate 5
+        run: node test/retrieval/eval.js --gate 2 --warn-gate 0.5
 
       - name: Status-aware retrieval assertions
         run: node test/retrieval/status_filter.test.js
