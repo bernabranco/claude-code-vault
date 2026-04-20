@@ -96,11 +96,13 @@ function collectToolUses(transcriptTail) {
     for (const block of content) {
       if (block?.type !== "tool_use") continue;
       const name = String(block.name || "");
-      if (name.includes("__vault_") || name.startsWith("vault_")) {
+      // Strip mcp__<server>__ prefix so vault and edit detection share one path.
+      const bare = name.includes("__") ? name.split("__").pop() : name;
+      if (bare.startsWith("vault_")) {
         vaultUses++;
         continue;
       }
-      const bare = name.includes("__") ? name.split("__").pop() : name;
+      // NotebookEdit uses notebook_path; Edit/Write/MultiEdit use file_path.
       if (EDIT_TOOLS.has(bare)) {
         const fp = block?.input?.file_path || block?.input?.notebook_path;
         if (typeof fp === "string" && fp.length > 0) editedFiles.add(fp);
