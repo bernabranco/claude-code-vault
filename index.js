@@ -728,6 +728,44 @@ program
     }
   });
 
+// ===== GAP =====
+program
+  .command("gap <repo-path>")
+  .description(
+    "Report host-repo surfaces (src modules, routes, schemas, scripts) with no vault mention. " +
+      "Honors .gitignore via `git ls-files`."
+  )
+  .option("--json", "Output as JSON instead of markdown")
+  .action(async (repoPath, options) => {
+    const vaultDir = program.opts().vault;
+    const vault = new Vault(vaultDir);
+    await vault.reindex();
+
+    const { analyzeGaps, formatMarkdown } = await import("./lib/gap-analyzer.js");
+    const resolvedRepo = path.resolve(repoPath);
+
+    try {
+      await fs.access(resolvedRepo);
+    } catch {
+      console.error(`✗ Repo path not found: ${resolvedRepo}`);
+      process.exit(1);
+    }
+
+    let report;
+    try {
+      report = await analyzeGaps(vault, resolvedRepo);
+    } catch (err) {
+      console.error(`✗ Gap analysis failed: ${err.message}`);
+      process.exit(1);
+    }
+
+    if (options.json) {
+      console.log(JSON.stringify(report, null, 2));
+    } else {
+      process.stdout.write(formatMarkdown(report));
+    }
+  });
+
 // ===== QUERY LOG =====
 program
   .command("query-log")
