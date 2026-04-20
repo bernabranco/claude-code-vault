@@ -127,7 +127,7 @@ Idempotent: re-running skips existing files. After it finishes, restart Claude C
 
 `.mcp.json` is committed at the repo root, so any Claude Code session started from this directory picks it up after `npm install`. Restart Claude Code and eight vault tools become available:
 
-- `vault_search` — keyword matching (title/tag/id)
+- `vault_search` — keyword matching (title/tag/id/body, with metadata weighted above body)
 - `vault_semantic_search` — meaning-based, note-level (best-chunk aggregation)
 - `vault_search_chunks` — meaning-based, paragraph/section-level (returns chunk text + heading breadcrumb)
 - `vault_read` — full note content by id

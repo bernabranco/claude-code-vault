@@ -13,3 +13,6 @@ build/
 !.claude/agents/
 !.claude/commands/
 claude-code-vault-temp/
+
+# Local dogfooding eval artifacts — tied to private vaults, not reproducible by others
+test/retrieval/posevision-*.json
