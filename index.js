@@ -20,12 +20,22 @@ program
   .version(pkg.version)
   .option("--vault <dir>", "Vault directory", "./vault");
 
+// Resolution order: explicit --vault flag > VAULT_DIR env > default "./vault".
+// Commander's getOptionValueSource lets us distinguish "user passed --vault"
+// from "default kicked in", so env-var can win over the default without
+// overriding an explicitly-passed flag.
+function resolveVaultDir() {
+  const source = program.getOptionValueSource?.("vault");
+  if (source === "cli") return program.opts().vault;
+  return process.env.VAULT_DIR || program.opts().vault;
+}
+
 // ===== INIT =====
 program
   .command("init [project]")
   .description("Initialize a new vault project")
   .action(async (projectName) => {
-    const vaultDir = program.opts().vault;
+    const vaultDir = resolveVaultDir();
     const project = projectName || path.basename(process.cwd());
     const projectPath = path.join(vaultDir, project);
 
@@ -167,7 +177,7 @@ program
   .command("index")
   .description("Reindex vault and list notes")
   .action(async () => {
-    const vaultDir = program.opts().vault;
+    const vaultDir = resolveVaultDir();
     const vault = new Vault(vaultDir);
     await vault.reindex();
     console.log(`✓ Indexed ${vault.index.length} notes\n`);
@@ -188,7 +198,7 @@ program
   .option("--json", "Output as JSON")
   .description("Search vault")
   .action(async (query, options) => {
-    const vaultDir = program.opts().vault;
+    const vaultDir = resolveVaultDir();
     const vault = new Vault(vaultDir);
     await vault.reindex();
 
@@ -217,7 +227,7 @@ program
   .command("list [tag]")
   .description("List notes, optionally filtered by tag")
   .action(async (tag) => {
-    const vaultDir = program.opts().vault;
+    const vaultDir = resolveVaultDir();
     const vault = new Vault(vaultDir);
     await vault.reindex();
 
@@ -233,7 +243,7 @@ program
   .command("export [format]")
   .description("Export vault as JSON or markdown")
   .action(async (format = "json") => {
-    const vaultDir = program.opts().vault;
+    const vaultDir = resolveVaultDir();
     const vault = new Vault(vaultDir);
     await vault.reindex();
 
@@ -257,7 +267,7 @@ program
   .option("--stale-days <n>", "Stale threshold in days for lastVerified", "180")
   .option("--stale-stub-days <n>", "Age (days) at which draft stubs are flagged", "7")
   .action(async (options) => {
-    const vaultDir = program.opts().vault;
+    const vaultDir = resolveVaultDir();
     const vault = new Vault(vaultDir);
     await vault.reindex();
 
@@ -288,7 +298,7 @@ program
   .command("stats")
   .description("Show vault statistics")
   .action(async () => {
-    const vaultDir = program.opts().vault;
+    const vaultDir = resolveVaultDir();
     const vault = new Vault(vaultDir);
     await vault.reindex();
 
@@ -338,7 +348,7 @@ program
   )
   .description("Create a new note")
   .action(async (pathStr, title, options) => {
-    const vaultDir = program.opts().vault;
+    const vaultDir = resolveVaultDir();
     const slug = title
       .toLowerCase()
       .replace(/[^\w\s-]/g, "")
@@ -386,7 +396,7 @@ program
   .option("--dry-run", "Don't modify files")
   .description("Auto-fix frontmatter in all notes (date normalization, missing description, trailing whitespace)")
   .action(async (options) => {
-    const vaultDir = program.opts().vault;
+    const vaultDir = resolveVaultDir();
     const vault = new Vault(vaultDir);
     await vault.reindex();
 
@@ -456,7 +466,7 @@ program
   .option("--dry-run", "Don't push to remote")
   .description("Git add, commit, and push vault changes")
   .action(async (options) => {
-    const vaultDir = program.opts().vault;
+    const vaultDir = resolveVaultDir();
 
     const statusResult = spawnSync("git", ["status", "--porcelain", vaultDir], {
       encoding: "utf-8",
@@ -498,7 +508,7 @@ program
   .description("Start the web server")
   .action(async (options) => {
     process.env.PORT = options.port;
-    process.env.VAULT_DIR = program.opts().vault;
+    process.env.VAULT_DIR = resolveVaultDir();
     await import("./lib/server.js");
   });
 
@@ -507,7 +517,7 @@ program
   .command("mcp")
   .description("Start the MCP server (stdio transport, for Claude Code)")
   .action(async () => {
-    process.env.VAULT_DIR = program.opts().vault;
+    process.env.VAULT_DIR = resolveVaultDir();
     await import("./lib/mcp.js");
   });
 
@@ -516,7 +526,7 @@ async function openSyncedDb() {
   const { openEmbeddingsDb, syncEmbeddings } = await import(
     "./lib/embeddings.js"
   );
-  const vaultDir = program.opts().vault;
+  const vaultDir = resolveVaultDir();
   const vault = new Vault(vaultDir);
   await vault.reindex();
 
@@ -728,6 +738,54 @@ program
     }
   });
 
+// ===== GAP =====
+program
+  .command("gap <repo-path>")
+  .description(
+    "Classify host-repo surfaces (src modules, routes, schemas, scripts) into " +
+      "uncovered / mentioned-in-prose / covered buckets relative to the vault. " +
+      "Honors .gitignore via `git ls-files`."
+  )
+  .option("--json", "Output as JSON (includes covered/mentioned/uncovered arrays) instead of markdown")
+  .action(async (repoPath, options) => {
+    const resolvedRepo = path.resolve(repoPath);
+
+    // Cheap existence + repo-shape checks BEFORE the vault reindex so users
+    // don't pay the reindex cost on a typo or a non-git directory.
+    try {
+      await fs.access(resolvedRepo);
+    } catch {
+      console.error(`✗ Repo path not found: ${resolvedRepo}`);
+      process.exit(1);
+    }
+    try {
+      await fs.access(path.join(resolvedRepo, ".git"));
+    } catch {
+      console.error(`✗ Not a git repository: ${resolvedRepo}`);
+      process.exit(1);
+    }
+
+    const vaultDir = resolveVaultDir();
+    const vault = new Vault(vaultDir);
+    await vault.reindex();
+
+    const { analyzeGaps, formatMarkdown } = await import("./lib/gap-analyzer.js");
+
+    let report;
+    try {
+      report = await analyzeGaps(vault, resolvedRepo);
+    } catch (err) {
+      console.error(`✗ Gap analysis failed: ${err.message}`);
+      process.exit(1);
+    }
+
+    if (options.json) {
+      console.log(JSON.stringify(report, null, 2));
+    } else {
+      process.stdout.write(formatMarkdown(report));
+    }
+  });
+
 // ===== QUERY LOG =====
 program
   .command("query-log")
@@ -744,7 +802,7 @@ program
   .option("--json", "Output as JSON")
   .option("--clear", "Delete both active and rotated log files")
   .action(async (options) => {
-    const vaultDir = program.opts().vault;
+    const vaultDir = resolveVaultDir();
     const cacheDir = path.resolve(vaultDir, "..", ".vault-cache");
     const { readEntries, listMisses, topEmptyQueries, tailEntries, clearLog } =
       await import("./lib/query-log.js");
