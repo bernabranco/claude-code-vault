@@ -118,7 +118,15 @@ Agents can author notes directly through two MCP tools (the CLI does not current
 - **`vault_append_section`** — append content to a single heading-section, selected by `headingPath` (strict ancestor chain of heading texts, e.g. `["Gotchas", "Auth retry storm"]`). Content lands after the section's last non-blank body line, before the next same-or-higher heading. The heading and frontmatter are untouched.
 - **`vault_replace_section`** — replace the body of a single heading-section (same path semantics). The heading line is preserved verbatim; everything between it and the next same-or-higher heading — including nested subsections — is replaced. Pass an empty `content` to clear the section body. Use this for low-overhead incremental updates (one gotcha, one runbook step) instead of round-tripping the whole note.
 
-All four tools write atomically (tmp-file + rename), then reindex the vault and resync embeddings so the write is immediately searchable. All return the note as read back from disk. Section edits fail on path miss, ambiguous match, or unresolved wiki-links in the result.
+All four write tools return `{ note, createdStubs, suggestedLinks }`:
+
+- **`note`** — the written note as read back from disk.
+- **`createdStubs`** — ids of any notes auto-created because the body contained unresolved `[[target]]` wiki-links. Each stub starts with `status: draft`, `tags: [stub]`, and a body that backlinks to the source note. Authoring never blocks on chain-of-reference; the agent can fill stubs in later. Invalid id shapes (e.g. `../escape`) still reject.
+- **`suggestedLinks`** — bare mentions of known note titles or glossary `terms` that aren't already wiki-linked. Each entry is `{ target, matchedText, matchedOn: "title" | "term", count, firstLine }`. Not auto-inserted — the agent decides.
+
+All four tools write atomically (tmp-file + rename), then reindex the vault and resync embeddings so the write is immediately searchable. Section edits fail on path miss or ambiguous match.
+
+Draft stubs that haven't been filled in after **`staleStubDays`** (default 7) are flagged by the linter with code `stale-stub`. Tune with `--stale-stub-days <n>` (CLI) or `staleStubDays` (MCP `vault_lint`).
 
 Use these to keep agent-authored content subject to the same schema and link-integrity rules as hand-written notes.
 

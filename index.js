@@ -255,6 +255,7 @@ program
   )
   .option("--format <fmt>", "Output format: text | json | github", "text")
   .option("--stale-days <n>", "Stale threshold in days for lastVerified", "180")
+  .option("--stale-stub-days <n>", "Age (days) at which draft stubs are flagged", "7")
   .action(async (options) => {
     const vaultDir = program.opts().vault;
     const vault = new Vault(vaultDir);
@@ -267,6 +268,7 @@ program
 
     const findings = await lintVault(vault, {
       staleDays: parseInt(options.staleDays, 10),
+      staleStubDays: parseInt(options.staleStubDays, 10),
     });
 
     const fmt = options.format;
