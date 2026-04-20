@@ -166,6 +166,30 @@ node index.js read-with-context claude-code-vault/adrs/adr-001-local-first-embed
 node index.js search-with-context "tab throttling" --limit 3 --depth 2
 ```
 
+## Vault-first hook (optional)
+
+Tool descriptions nudge agents to reach for the vault before Grep/Read, but they're advisory — an agent habituated to filesystem search can still skip the vault. A PreToolUse hook makes the nudge guaranteed.
+
+Wire it into `.claude/settings.json`:
+
+```json
+{
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Grep|Glob",
+        "hooks": [{
+          "type": "command",
+          "command": "node ./node_modules/claude-code-vault/hooks/vault-first-reminder.mjs"
+        }]
+      }
+    ]
+  }
+}
+```
+
+On the **first** Grep or Glob per session, the hook emits a reminder with `vault_semantic_search` pre-formulated from the search pattern. Every subsequent Grep/Glob is silent — this is a once-per-session nudge, not a gate. Never blocks the underlying tool. State lives in `/tmp/claude-code-vault-hook-state/`. Disable per-session with `CLAUDE_VAULT_HOOK_DISABLE=1`.
+
 ## Roadmap
 
 Full roadmap tracker: **[#33 — LLM-first documentation](https://github.com/bernabranco/claude-code-vault/issues/33)**.

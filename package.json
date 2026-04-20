@@ -14,7 +14,8 @@
   },
   "files": [
     "index.js",
-    "lib/"
+    "lib/",
+    "hooks/"
   ],
   "scripts": {
     "dev": "concurrently \"node --watch lib/server.js\" \"cd web && npm run dev\"",
