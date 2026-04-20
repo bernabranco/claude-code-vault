@@ -1,6 +1,6 @@
 {
   "name": "claude-code-vault",
-  "version": "0.1.2",
+  "version": "0.2.0",
   "description": "Local-first markdown knowledge vault for Claude Code — semantic search, graph-aware context, and MCP integration",
   "main": "index.js",
   "type": "module",
