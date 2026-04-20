@@ -14,12 +14,15 @@ import path from "path";
 import { spawnSync } from "child_process";
 import {
   analyzeGaps,
+  buildVaultBodyHaystack,
   buildVaultHaystack,
+  classifySurface,
   detectSurfaces,
   formatMarkdown,
   listGitFiles,
   normalizeToken,
   surfaceIsCovered,
+  surfaceIsMentioned,
 } from "../lib/gap-analyzer.js";
 import { Vault } from "../lib/vault.js";
 
@@ -216,6 +219,29 @@ async function buildVaultFixture({ covers }) {
     );
   }
 
+  // If requested, add a note whose body MENTIONS `billing` in prose but
+  // whose title/tags/links never use the word — exactly the "mentioned in
+  // prose" case we want to distinguish from both uncovered and covered.
+  if (covers.includes("billing-prose")) {
+    await writeFile(
+      projectDir,
+      "designs/payments-overview.md",
+      [
+        "---",
+        "title: Payments overview",
+        "tags: [payments, commerce]",
+        "date: 2026-04-20",
+        "---",
+        "",
+        "# Payments overview",
+        "",
+        "We integrate Stripe for checkout. The billing flow is described",
+        "informally here but does not have its own dedicated note yet.",
+        "",
+      ].join("\n")
+    );
+  }
+
   const vault = new Vault(vaultRoot);
   await vault.reindex();
   return vault;
@@ -259,7 +285,9 @@ async function main() {
   assert(JSON.stringify(scripts) === JSON.stringify(["build", "deploy:prod", "test"]), "package.json scripts detected");
 
   process.stderr.write("\nbuildVaultHaystack + surfaceIsCovered substring match\n");
-  const vault = await buildVaultFixture({ covers: ["auth", "schema", "build"] });
+  const vault = await buildVaultFixture({
+    covers: ["auth", "schema", "build", "billing-prose"],
+  });
   const haystack = buildVaultHaystack(vault);
   assert(haystack.includes("auth"), "haystack mentions auth");
   assert(haystack.includes("schema"), "haystack mentions schema");
@@ -269,34 +297,103 @@ async function main() {
   assert(surfaceIsCovered({ kind: "script", name: "deploy:prod" }, haystack) === false, "deploy:prod NOT covered");
   assert(surfaceIsCovered({ kind: "src-module", name: "ab" }, haystack) === false, "too-short token skipped");
 
-  process.stderr.write("\nanalyzeGaps produces sorted gap list\n");
+  process.stderr.write("\nbuildVaultBodyHaystack + surfaceIsMentioned prose match\n");
+  const bodyHaystack = await buildVaultBodyHaystack(vault);
+  assert(bodyHaystack.includes("billing"), "body haystack mentions billing (prose-only)");
+  assert(
+    surfaceIsMentioned({ kind: "src-module", name: "billing" }, bodyHaystack) === true,
+    "billing prose-mentioned"
+  );
+  assert(
+    surfaceIsMentioned({ kind: "src-module", name: "inventory" }, bodyHaystack) === false,
+    "inventory NOT even prose-mentioned"
+  );
+  assert(
+    surfaceIsCovered({ kind: "src-module", name: "billing" }, haystack) === false,
+    "billing NOT in structural haystack (only prose)"
+  );
+
+  process.stderr.write("\nclassifySurface tiers\n");
+  assert(
+    classifySurface({ kind: "src-module", name: "auth" }, haystack, bodyHaystack) === "covered",
+    "auth → covered (structural)"
+  );
+  assert(
+    classifySurface({ kind: "src-module", name: "billing" }, haystack, bodyHaystack) === "mentioned",
+    "billing → mentioned (prose only)"
+  );
+  assert(
+    classifySurface({ kind: "src-module", name: "inventory" }, haystack, bodyHaystack) === "uncovered",
+    "inventory → uncovered (nowhere)"
+  );
+
+  process.stderr.write("\nanalyzeGaps produces three-tier report\n");
   const report = await analyzeGaps(vault, repo);
   assert(report.repo === path.resolve(repo), "report carries resolved repo path");
   assert(Array.isArray(report.surfaces) && report.surfaces.length > 0, "surfaces array populated");
-  assert(Array.isArray(report.gaps), "gaps is an array");
-  const gapNames = report.gaps.map((g) => `${g.kind}::${g.name}`);
-  assert(gapNames.includes("src-module::inventory"), "inventory module flagged as gap");
-  assert(gapNames.includes("src-module::billing"), "billing module flagged as gap");
-  assert(gapNames.includes("script::deploy:prod"), "deploy:prod script flagged as gap");
-  assert(!gapNames.includes("src-module::auth"), "auth module NOT flagged (covered)");
-  assert(!gapNames.includes("script::build"), "build script NOT flagged (covered)");
+  assert(Array.isArray(report.covered), "covered is an array");
+  assert(Array.isArray(report.mentioned), "mentioned is an array");
+  assert(Array.isArray(report.uncovered), "uncovered is an array");
+  assert(Array.isArray(report.gaps), "gaps alias preserved");
+  assert(Array.isArray(report.missing), "missing alias preserved");
+  assert(report.gaps === report.uncovered, "gaps alias points at uncovered");
+  assert(report.missing === report.uncovered, "missing alias points at uncovered");
 
-  // Sorting: non-null mtime gaps should precede null-mtime gaps (scripts).
-  const firstScriptIdx = report.gaps.findIndex((g) => g.kind === "script");
-  const firstSrcIdx = report.gaps.findIndex((g) => g.kind !== "script" && g.mtime);
-  if (firstScriptIdx >= 0 && firstSrcIdx >= 0) {
-    assert(firstSrcIdx < firstScriptIdx, "mtime-ful surfaces come before null-mtime scripts");
+  const asKey = (s) => `${s.kind}::${s.name}`;
+  const coveredNames = new Set(report.covered.map(asKey));
+  const mentionedNames = new Set(report.mentioned.map(asKey));
+  const uncoveredNames = new Set(report.uncovered.map(asKey));
+
+  assert(coveredNames.has("src-module::auth"), "auth in covered");
+  assert(coveredNames.has("script::build"), "build in covered");
+  assert(mentionedNames.has("src-module::billing"), "billing in mentioned (prose only)");
+  assert(!coveredNames.has("src-module::billing"), "billing NOT in covered");
+  assert(!uncoveredNames.has("src-module::billing"), "billing NOT in uncovered");
+  assert(uncoveredNames.has("src-module::inventory"), "inventory in uncovered");
+  assert(uncoveredNames.has("script::deploy:prod"), "deploy:prod in uncovered");
+
+  // Every surface has a coverage tier, and the booleans agree.
+  for (const s of report.surfaces) {
+    assert(
+      s.coverage === "covered" || s.coverage === "mentioned" || s.coverage === "uncovered",
+      `surface ${s.name} has valid coverage tier (${s.coverage})`
+    );
+    assert(s.covered === (s.coverage === "covered"), `surface ${s.name} covered bool matches tier`);
   }
 
-  process.stderr.write("\nformatMarkdown includes sections and counts\n");
+  // Sorting: within uncovered, non-null mtime surfaces precede null-mtime scripts.
+  const firstScriptIdx = report.uncovered.findIndex((g) => g.kind === "script");
+  const firstSrcIdx = report.uncovered.findIndex((g) => g.kind !== "script" && g.mtime);
+  if (firstScriptIdx >= 0 && firstSrcIdx >= 0) {
+    assert(firstSrcIdx < firstScriptIdx, "mtime-ful uncovered surfaces precede null-mtime scripts");
+  }
+
+  process.stderr.write("\nformatMarkdown renders three coverage tiers\n");
   const md = formatMarkdown(report);
   assert(md.startsWith("# Vault Gap Report"), "markdown starts with title");
   assert(md.includes("**Repo**"), "markdown lists repo");
-  assert(md.includes("**Gaps (no vault mention)**"), "markdown summarizes gap count");
-  assert(md.includes("Source modules"), "markdown has src-module section");
-  assert(md.includes("inventory"), "markdown lists inventory gap");
+  assert(md.includes("**Uncovered**:"), "markdown shows uncovered count");
+  assert(md.includes("**Mentioned (prose only)**:"), "markdown shows mentioned count");
+  assert(md.includes("**Covered**:"), "markdown shows covered count");
+  assert(md.includes("## Uncovered (no mentions)"), "markdown has Uncovered section");
+  assert(md.includes("## Mentioned in prose"), "markdown has Mentioned section");
+  assert(md.includes("## Covered"), "markdown has Covered section");
+  assert(md.includes("Source modules"), "markdown has src-module subsection");
+  assert(md.includes("inventory"), "markdown lists inventory uncovered");
+  // billing is mentioned in prose, so it should appear under Mentioned but
+  // not under Uncovered.
+  const uncoveredBlock = md.slice(
+    md.indexOf("## Uncovered"),
+    md.indexOf("## Mentioned")
+  );
+  const mentionedBlock = md.slice(
+    md.indexOf("## Mentioned"),
+    md.indexOf("## Covered")
+  );
+  assert(!uncoveredBlock.includes("`billing`"), "billing NOT listed under Uncovered");
+  assert(mentionedBlock.includes("`billing`"), "billing listed under Mentioned");
 
-  process.stderr.write("\nformatMarkdown handles zero-gap case\n");
+  process.stderr.write("\nformatMarkdown handles zero-uncovered / zero-mentioned case\n");
   const fullCoverVault = await buildVaultFixture({
     covers: ["auth", "schema", "build"],
   });
@@ -321,23 +418,48 @@ async function main() {
   const vaultFull = new Vault(vaultRoot2);
   await vaultFull.reindex();
   const fullReport = await analyzeGaps(vaultFull, repo);
-  // Not guaranteed to hit zero (some tokens like "users" route file full path
-  // may still miss), so just assert the happy-path empty format doesn't crash:
-  const fullMd = formatMarkdown({
+  // Force an empty-tiers render and assert it renders cleanly.
+  const emptyMd = formatMarkdown({
     ...fullReport,
+    uncovered: [],
+    mentioned: [],
     gaps: [],
+    missing: [],
   });
-  assert(fullMd.includes("No gaps detected"), "empty-gap report renders cleanly");
+  assert(
+    emptyMd.includes("Every significant surface has at least a dedicated vault note"),
+    "empty-tier report renders cleanly"
+  );
   // Keep the lint clean:
   void fullCoverVault;
 
-  process.stderr.write("\nJSON shape matches contract\n");
+  process.stderr.write("\nJSON shape matches three-tier contract\n");
   const parsed = JSON.parse(JSON.stringify(report));
   assert(typeof parsed.generatedAt === "string", "generatedAt is a string");
   assert(Array.isArray(parsed.surfaces), "surfaces array present");
-  for (const g of parsed.gaps) {
-    assert(typeof g.kind === "string" && typeof g.name === "string", `gap has kind+name (${g.kind})`);
-    assert(g.covered === false, `gap.covered always false (${g.name})`);
+  assert(Array.isArray(parsed.covered), "covered array present in JSON");
+  assert(Array.isArray(parsed.mentioned), "mentioned array present in JSON");
+  assert(Array.isArray(parsed.uncovered), "uncovered array present in JSON");
+  assert(Array.isArray(parsed.gaps), "gaps alias present in JSON");
+  assert(Array.isArray(parsed.missing), "missing alias present in JSON");
+  for (const s of parsed.surfaces) {
+    assert(typeof s.kind === "string" && typeof s.name === "string", `surface has kind+name (${s.kind})`);
+    assert(
+      s.coverage === "covered" || s.coverage === "mentioned" || s.coverage === "uncovered",
+      `surface.coverage is one of the three tiers (${s.name} → ${s.coverage})`
+    );
+  }
+  for (const u of parsed.uncovered) {
+    assert(u.coverage === "uncovered", `uncovered entry tagged uncovered (${u.name})`);
+    assert(u.covered === false, `uncovered.covered === false (${u.name})`);
+  }
+  for (const m of parsed.mentioned) {
+    assert(m.coverage === "mentioned", `mentioned entry tagged mentioned (${m.name})`);
+    assert(m.covered === false, `mentioned.covered === false (${m.name})`);
+  }
+  for (const c of parsed.covered) {
+    assert(c.coverage === "covered", `covered entry tagged covered (${c.name})`);
+    assert(c.covered === true, `covered.covered === true (${c.name})`);
   }
 
   process.stderr.write("\nlistGitFiles on non-repo throws\n");

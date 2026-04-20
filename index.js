@@ -732,10 +732,11 @@ program
 program
   .command("gap <repo-path>")
   .description(
-    "Report host-repo surfaces (src modules, routes, schemas, scripts) with no vault mention. " +
+    "Classify host-repo surfaces (src modules, routes, schemas, scripts) into " +
+      "uncovered / mentioned-in-prose / covered buckets relative to the vault. " +
       "Honors .gitignore via `git ls-files`."
   )
-  .option("--json", "Output as JSON instead of markdown")
+  .option("--json", "Output as JSON (includes covered/mentioned/uncovered arrays) instead of markdown")
   .action(async (repoPath, options) => {
     const vaultDir = program.opts().vault;
     const vault = new Vault(vaultDir);
