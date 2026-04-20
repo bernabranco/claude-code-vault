@@ -29,7 +29,7 @@ jobs:
         run: cd web && npm install && cd ..
 
       - name: Type check (CLI)
-        run: npx tsc --noEmit --allowJs --skipLibCheck index.js lib/*.js test/retrieval/eval.js test/retrieval/status_filter.test.js test/vault-write.test.js
+        run: npx tsc --noEmit --allowJs --skipLibCheck index.js lib/*.js test/retrieval/eval.js test/retrieval/status_filter.test.js test/vault-write.test.js test/section-edit.test.js
 
       - name: Type check (web)
         run: cd web && npx tsc --noEmit && cd ..
@@ -55,6 +55,9 @@ jobs:
 
       - name: Vault write-back assertions
         run: node test/vault-write.test.js
+
+      - name: Section-edit assertions
+        run: node test/section-edit.test.js
 
       - name: Lint web (if eslintrc exists)
         run: cd web && npm run lint 2>/dev/null || echo "No lint script defined"
