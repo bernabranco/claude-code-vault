@@ -19,7 +19,7 @@ This vault doubles as documentation for `claude-code-vault` itself and as the re
 - Want to use the search API? → [[claude-code-vault/features/semantic-search]]
 - Hitting an install or runtime error? → [[claude-code-vault/gotchas/gotchas]]
 - Cutting a release? → [[claude-code-vault/runbooks/publish-release]]
-- Confused by a term? → [[claude-code-vault/glossary/core-terms]]
+- Confused by a term? → [[claude-code-vault/glossary/core-terms]] or [[shared/glossary/rag-terms]] for cross-project RAG vocabulary
 - Curious *why* the stack looks the way it does? → [[claude-code-vault/adrs/adr-001-local-first-embeddings]]
 - Looking ahead? → [[claude-code-vault/research/roadmap]]
 

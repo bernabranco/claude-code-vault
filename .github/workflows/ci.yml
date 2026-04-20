@@ -29,7 +29,7 @@ jobs:
         run: cd web && npm install && cd ..
 
       - name: Type check (CLI)
-        run: npx tsc --noEmit --allowJs --skipLibCheck index.js lib/*.js test/retrieval/eval.js test/retrieval/status_filter.test.js test/vault-write.test.js test/section-edit.test.js test/stubs-and-suggestions.test.js test/query-log.test.js
+        run: npx tsc --noEmit --allowJs --skipLibCheck index.js lib/*.js test/retrieval/eval.js test/retrieval/status_filter.test.js test/vault-write.test.js test/section-edit.test.js test/stubs-and-suggestions.test.js test/query-log.test.js test/glossary.test.js
 
       - name: Type check (web)
         run: cd web && npx tsc --noEmit && cd ..
@@ -64,6 +64,9 @@ jobs:
 
       - name: Query-miss log assertions
         run: node test/query-log.test.js
+
+      - name: Glossary resolution assertions
+        run: node test/glossary.test.js
 
       - name: Lint web (if eslintrc exists)
         run: cd web && npm run lint 2>/dev/null || echo "No lint script defined"
