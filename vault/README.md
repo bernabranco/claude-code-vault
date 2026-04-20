@@ -115,8 +115,10 @@ Agents can author notes directly through two MCP tools (the CLI does not current
 
 - **`vault_create_note`** — create a new note. Required: `id`, `type`, `title`, `body`. Optional: `tags`, `description`, `summary`, `status` (defaults to `current`). Fails on id collision, missing required fields, unknown status, or unresolved wiki-links in the body. `date` and `lastVerified` are stamped to today.
 - **`vault_write`** — update an existing note. `content` may be either full markdown with a leading `---` frontmatter block (merge-patched over existing frontmatter; body replaced) or body-only markdown (existing frontmatter preserved; body replaced). Fails if the note doesn't exist, the body is empty, or the body introduces unresolved wiki-links.
+- **`vault_append_section`** — append content to a single heading-section, selected by `headingPath` (strict ancestor chain of heading texts, e.g. `["Gotchas", "Auth retry storm"]`). Content lands after the section's last non-blank body line, before the next same-or-higher heading. The heading and frontmatter are untouched.
+- **`vault_replace_section`** — replace the body of a single heading-section (same path semantics). The heading line is preserved verbatim; everything between it and the next same-or-higher heading — including nested subsections — is replaced. Pass an empty `content` to clear the section body. Use this for low-overhead incremental updates (one gotcha, one runbook step) instead of round-tripping the whole note.
 
-Both tools write atomically (tmp-file + rename), then reindex the vault and resync embeddings so the write is immediately searchable. Both return the note as read back from disk.
+All four tools write atomically (tmp-file + rename), then reindex the vault and resync embeddings so the write is immediately searchable. All return the note as read back from disk. Section edits fail on path miss, ambiguous match, or unresolved wiki-links in the result.
 
 Use these to keep agent-authored content subject to the same schema and link-integrity rules as hand-written notes.
 
