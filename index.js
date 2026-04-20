@@ -728,4 +728,83 @@ program
     }
   });
 
+// ===== QUERY LOG =====
+program
+  .command("query-log")
+  .description(
+    "Inspect the query-miss log (requires VAULT_QUERY_LOG=1 during MCP runs). " +
+      "Default view: top empty/low-score queries, grouped by normalized text."
+  )
+  .option("--misses", "List individual miss entries (chronological)")
+  .option("--top-empty", "Group misses by query text, sorted by frequency (default)")
+  .option("--tail <n>", "Print the last N entries (all, not just misses)")
+  .option("--min-score <n>", "Scores below this are treated as misses", "0.3")
+  .option("--since <date>", "Only include entries on or after YYYY-MM-DD")
+  .option("--limit <n>", "Max rows to print (default 20)", "20")
+  .option("--json", "Output as JSON")
+  .option("--clear", "Delete both active and rotated log files")
+  .action(async (options) => {
+    const vaultDir = program.opts().vault;
+    const cacheDir = path.resolve(vaultDir, "..", ".vault-cache");
+    const { readEntries, listMisses, topEmptyQueries, tailEntries, clearLog } =
+      await import("./lib/query-log.js");
+
+    if (options.clear) {
+      const removed = await clearLog(cacheDir);
+      console.log(`✓ Removed ${removed} log file(s)`);
+      return;
+    }
+
+    const entries = await readEntries(cacheDir);
+    const minScore = parseFloat(options.minScore);
+    const limit = parseInt(options.limit, 10);
+
+    if (options.tail) {
+      const n = parseInt(options.tail, 10);
+      const rows = tailEntries(entries, n);
+      if (options.json) {
+        console.log(JSON.stringify(rows, null, 2));
+      } else if (rows.length === 0) {
+        console.log("No entries logged.");
+      } else {
+        for (const e of rows) {
+          const score = typeof e.topScore === "number" ? e.topScore.toFixed(3) : "—";
+          console.log(`  ${e.timestamp}  ${e.tool}  results=${e.resultCount} top=${score}  "${e.query}"`);
+        }
+      }
+      return;
+    }
+
+    if (options.misses) {
+      const rows = listMisses(entries, { minScore, since: options.since }).slice(-limit);
+      if (options.json) {
+        console.log(JSON.stringify(rows, null, 2));
+      } else if (rows.length === 0) {
+        console.log("No misses recorded.");
+      } else {
+        for (const e of rows) {
+          const score = typeof e.topScore === "number" ? e.topScore.toFixed(3) : "—";
+          console.log(`  ${e.timestamp}  ${e.tool}  results=${e.resultCount} top=${score}  "${e.query}"`);
+        }
+      }
+      return;
+    }
+
+    const rows = topEmptyQueries(entries, { minScore, since: options.since, limit });
+    if (options.json) {
+      console.log(JSON.stringify(rows, null, 2));
+      return;
+    }
+    if (rows.length === 0) {
+      console.log("No misses recorded (or logging disabled — set VAULT_QUERY_LOG=1 during MCP runs).");
+      return;
+    }
+    console.log(`Top ${rows.length} miss queries (score threshold ${minScore}):\n`);
+    for (const r of rows) {
+      const best = r.bestTopScore === null ? "—" : r.bestTopScore.toFixed(3);
+      console.log(`  ${String(r.count).padStart(4)}×  best=${best}  "${r.query}"`);
+      console.log(`        tools: ${r.tools.join(", ")}  first: ${r.firstSeen}  last: ${r.lastSeen}`);
+    }
+  });
+
 program.parse(process.argv);
