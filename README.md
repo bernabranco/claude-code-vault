@@ -195,33 +195,33 @@ Frontmatter additions + linter so agents can trust what they read.
 
 - [x] **[Frontmatter schema extension](https://github.com/bernabranco/claude-code-vault/issues/18)** — `status`, `lastVerified`, `summary`, `type`
 - [x] **[Vault content linter](https://github.com/bernabranco/claude-code-vault/issues/19)** — `claude-code-vault lint` (text/JSON/GitHub formats). Dead links, missing frontmatter, orphans, heading skips, oversize/undersize, duplicate candidates, stale dates, unknown enums. Also exposed as the `vault_lint` MCP tool.
-- [ ] **[Typed-note schemas](https://github.com/bernabranco/claude-code-vault/issues/20)** — ADR / feature / gotcha / runbook / glossary with required fields
-- [ ] **[Status-aware retrieval](https://github.com/bernabranco/claude-code-vault/issues/21)** — downrank stale, exclude deprecated by default
+- [x] **[Typed-note schemas](https://github.com/bernabranco/claude-code-vault/issues/20)** — ADR / feature / gotcha / runbook / glossary with required fields; `add --type <t>` CLI scaffolds
+- [x] **[Status-aware retrieval](https://github.com/bernabranco/claude-code-vault/issues/21)** — downrank stale (× `staleWeight`, default 0.7), exclude deprecated by default
 
 ### Phase 3 — Write-back (LLMs as authors, not just readers)
 
 Today the vault is read-only from Claude's POV. This phase closes that gap.
 
-- [ ] **[`vault_write` + `vault_create_note`](https://github.com/bernabranco/claude-code-vault/issues/22)** — MCP tools with schema enforcement
-- [ ] **[Section-level edit](https://github.com/bernabranco/claude-code-vault/issues/23)** — append/replace a single heading-section atomically
-- [ ] **[Stub creation + auto-link suggestions](https://github.com/bernabranco/claude-code-vault/issues/24)** — on write, stub unresolved wiki-links and surface suggested links
+- [x] **[`vault_write` + `vault_create_note`](https://github.com/bernabranco/claude-code-vault/issues/22)** — MCP tools with schema enforcement, atomic tmp+rename, unresolved-link validation
+- [x] **[Section-level edit](https://github.com/bernabranco/claude-code-vault/issues/23)** — `vault_append_section` / `vault_replace_section`; strict heading-path matching with near-miss suggestions
+- [x] **[Stub creation + auto-link suggestions](https://github.com/bernabranco/claude-code-vault/issues/24)** — write tools auto-stub unresolved `[[targets]]` (opt-in) and surface `suggestedLinks` from known titles + glossary terms
 
 ### Phase 4 — Coverage + evaluation
 
 Know what's missing from the vault; keep it missing less.
 
-- [ ] **[Query-miss log](https://github.com/bernabranco/claude-code-vault/issues/25)** — record zero-result searches for review
-- [ ] **[Repo → vault gap report](https://github.com/bernabranco/claude-code-vault/issues/26)** — code / modules / routes with no vault entry
-- [ ] **[Contradiction detector](https://github.com/bernabranco/claude-code-vault/issues/27)** — flag semantically-overlapping notes with opposing claims
-- [ ] **[Retrieval eval CI gate](https://github.com/bernabranco/claude-code-vault/issues/28)** — fail PR on recall@k regression
+- [x] **[Query-miss log](https://github.com/bernabranco/claude-code-vault/issues/25)** — opt-in via `VAULT_QUERY_LOG=1`; `claude-code-vault query-log --misses` surfaces zero-result + low-score queries
+- [x] **[Repo → vault gap report](https://github.com/bernabranco/claude-code-vault/issues/26)** — `vault gap <repo>` classifies surfaces as covered / mentioned / uncovered via `git ls-files`
+- [x] **[Retrieval eval CI gate](https://github.com/bernabranco/claude-code-vault/issues/28)** — warn/fail tiers (`--gate 2 --warn-gate 0.5`); regressions annotate PR via `::warning`
+- [ ] **[Contradiction detector](https://github.com/bernabranco/claude-code-vault/issues/27)** — ~~flag semantically-overlapping notes with opposing claims~~ _closed wontfix: noisy heuristic; covered ~80% by stale-date linter + status-aware retrieval_
 
 ### Phase 5 — Ergonomics + multi-project
 
 Polish after the core is solid.
 
+- [x] **[Char budgets across search tools](https://github.com/bernabranco/claude-code-vault/issues/30)** — every search tool bounds its response (`maxChars`, default 8000); returns `{results, truncated}` envelope
+- [x] **[Shared glossary resolution](https://github.com/bernabranco/claude-code-vault/issues/31)** — `type: glossary` notes auto-resolve bare jargon mentions on `vault_read`; demo at `vault/shared/glossary/rag-terms.md`
 - [ ] **[`vault_tour` + `vault_outline`](https://github.com/bernabranco/claude-code-vault/issues/29)** — cheap orientation tools for fresh sessions
-- [ ] **[Token budgets across all tools](https://github.com/bernabranco/claude-code-vault/issues/30)** — bound every response
-- [ ] **[Shared glossary resolution](https://github.com/bernabranco/claude-code-vault/issues/31)** — `vault/shared/glossary/` auto-resolves jargon across projects
 - [ ] **[Federated search across projects](https://github.com/bernabranco/claude-code-vault/issues/32)** — project-scoped retrieval
 
 ### Other
@@ -231,17 +231,17 @@ Polish after the core is solid.
 
 ## Evaluation
 
-Retrieval changes (semantic search, chunk search, HyDE, filters) are gated by an eval harness — `test/retrieval/eval.js` — that runs a hand-authored gold dataset through every search tool and reports `recall@5` and `MRR@5`. CI fails if a tool's recall@5 drops by more than **5pp** vs the committed baseline.
+Retrieval changes (semantic search, chunk search, HyDE, filters) are gated by an eval harness — `test/retrieval/eval.js` — that runs a hand-authored gold dataset through every search tool and reports `recall@5` and `MRR@5`. CI fails when a tool's recall@5 drops by ≥ **2pp** vs the committed baseline, and annotates the PR as a warning for drops in `[0.5pp, 2pp)`.
 
 ```bash
 # Run the harness against the current code
-node test/retrieval/eval.js
+npm run eval
 
 # Update the baseline after an intentional improvement
-node test/retrieval/eval.js --update-baseline
+npm run eval:bless
 
-# Tighten the regression gate
-node test/retrieval/eval.js --gate 2
+# Custom regression gate (defaults: --gate 2 --warn-gate 0.5)
+node test/retrieval/eval.js --gate 3 --warn-gate 1
 
 # Measure HyDE lift (needs ANTHROPIC_API_KEY; falls back to raw query without)
 node test/retrieval/eval.js --hyde
