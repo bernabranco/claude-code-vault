@@ -289,8 +289,9 @@ async function main() {
     covers: ["auth", "schema", "build", "billing-prose"],
   });
   const haystack = buildVaultHaystack(vault);
-  assert(haystack.includes("auth"), "haystack mentions auth");
-  assert(haystack.includes("schema"), "haystack mentions schema");
+  assert(Array.isArray(haystack), "haystack is per-note array");
+  assert(haystack.some((n) => n.includes("auth")), "haystack mentions auth");
+  assert(haystack.some((n) => n.includes("schema")), "haystack mentions schema");
   assert(surfaceIsCovered({ kind: "src-module", name: "auth" }, haystack) === true, "auth src module covered");
   assert(surfaceIsCovered({ kind: "src-module", name: "inventory" }, haystack) === false, "inventory NOT covered");
   assert(surfaceIsCovered({ kind: "script", name: "build" }, haystack) === true, "build script covered");
@@ -299,7 +300,8 @@ async function main() {
 
   process.stderr.write("\nbuildVaultBodyHaystack + surfaceIsMentioned prose match\n");
   const bodyHaystack = await buildVaultBodyHaystack(vault);
-  assert(bodyHaystack.includes("billing"), "body haystack mentions billing (prose-only)");
+  assert(Array.isArray(bodyHaystack), "bodyHaystack is per-note array");
+  assert(bodyHaystack.some((n) => n.includes("billing")), "body haystack mentions billing (prose-only)");
   assert(
     surfaceIsMentioned({ kind: "src-module", name: "billing" }, bodyHaystack) === true,
     "billing prose-mentioned"
@@ -472,6 +474,166 @@ async function main() {
     threw = true;
   }
   assert(threw, "non-repo path rejected");
+
+  process.stderr.write("\nper-note haystack prevents cross-note bleed\n");
+  // Construct a vault with TWO notes where joining them with " | " (the old
+  // approach) would accidentally let "auth login" match text spanning the
+  // boundary: note A ends with "auth", note B starts with "login". With
+  // per-note matching, neither note alone contains "auth login", so a
+  // surface named "auth login" must NOT be classified as covered.
+  const bleedVaultRoot = setupDirs("bleed-vault");
+  const bleedProj = path.join(bleedVaultRoot, "proj");
+  fs.mkdirSync(bleedProj, { recursive: true });
+  await writeFile(
+    bleedProj,
+    "a-auth.md",
+    ["---", "title: Something auth", "date: 2026-04-20", "---", "", "# Auth", ""].join("\n")
+  );
+  await writeFile(
+    bleedProj,
+    "b-login.md",
+    ["---", "title: Login flow", "date: 2026-04-20", "---", "", "# Login flow", ""].join("\n")
+  );
+  const bleedVault = new Vault(bleedVaultRoot);
+  await bleedVault.reindex();
+  const bleedHaystack = buildVaultHaystack(bleedVault);
+  assert(
+    surfaceIsCovered({ kind: "src-module", name: "auth login" }, bleedHaystack) === false,
+    "multi-word surface does NOT bleed across adjacent notes"
+  );
+  assert(
+    surfaceIsCovered({ kind: "src-module", name: "auth" }, bleedHaystack) === true,
+    "single-word surface still matches within one note"
+  );
+  assert(
+    surfaceIsCovered({ kind: "src-module", name: "login" }, bleedHaystack) === true,
+    "other single-word surface still matches within its note"
+  );
+
+  process.stderr.write("\nempty vault (no notes) → all surfaces uncovered\n");
+  const emptyVaultRoot = setupDirs("empty-vault");
+  fs.mkdirSync(path.join(emptyVaultRoot, "proj"), { recursive: true });
+  const emptyVault = new Vault(emptyVaultRoot);
+  await emptyVault.reindex();
+  // Should not throw, should produce a report, should have all surfaces as uncovered.
+  const emptyReport = await analyzeGaps(emptyVault, repo);
+  assert(Array.isArray(emptyReport.uncovered), "empty vault analyze produced uncovered array");
+  assert(emptyReport.covered.length === 0, "empty vault: no surfaces covered");
+  assert(emptyReport.mentioned.length === 0, "empty vault: no surfaces mentioned");
+  assert(
+    emptyReport.uncovered.length === emptyReport.surfaces.length,
+    "empty vault: every surface in uncovered"
+  );
+
+  process.stderr.write("\nmalformed package.json does not crash, yields zero scripts\n");
+  const badPkgRepo = setupDirs("bad-pkg-repo");
+  run("git", ["init", "-q"], badPkgRepo);
+  run("git", ["config", "user.email", "test@example.com"], badPkgRepo);
+  run("git", ["config", "user.name", "test"], badPkgRepo);
+  run("git", ["config", "commit.gpgsign", "false"], badPkgRepo);
+  await writeFile(badPkgRepo, "package.json", "{ this is not valid json ");
+  await writeFile(badPkgRepo, "src/thing/x.js", "export function x() {}\n");
+  run("git", ["add", "-A"], badPkgRepo);
+  run("git", ["commit", "-q", "-m", "initial"], badPkgRepo);
+  const badPkgFiles = listGitFiles(badPkgRepo);
+  const badPkgSurfaces = await detectSurfaces(badPkgRepo, badPkgFiles);
+  const badPkgScripts = badPkgSurfaces.filter((s) => s.kind === "script");
+  assert(badPkgScripts.length === 0, "malformed package.json yields zero script surfaces");
+  assert(
+    badPkgSurfaces.some((s) => s.kind === "src-module" && s.name === "thing"),
+    "malformed package.json does not prevent src-module detection"
+  );
+
+  process.stderr.write("\nzero-commit git repo → empty files list, not a throw\n");
+  const emptyRepo = setupDirs("empty-repo");
+  run("git", ["init", "-q"], emptyRepo);
+  run("git", ["config", "user.email", "test@example.com"], emptyRepo);
+  run("git", ["config", "user.name", "test"], emptyRepo);
+  const emptyFiles = listGitFiles(emptyRepo);
+  assert(Array.isArray(emptyFiles), "zero-commit repo returned array");
+  assert(emptyFiles.length === 0, "zero-commit repo returned empty array");
+
+  process.stderr.write("\ndetectSurfaces skips generated dirs (dist/ etc)\n");
+  const skipRepo = setupDirs("skip-dirs-repo");
+  run("git", ["init", "-q"], skipRepo);
+  run("git", ["config", "user.email", "test@example.com"], skipRepo);
+  run("git", ["config", "user.name", "test"], skipRepo);
+  run("git", ["config", "commit.gpgsign", "false"], skipRepo);
+  // Note: no .gitignore — these dirs are INTENTIONALLY committed to exercise
+  // the SKIP_DIRS filter rather than the .gitignore path.
+  await writeFile(skipRepo, "src/keep/ok.js", "export function ok() {}\n");
+  await writeFile(skipRepo, "dist/bundle/index.js", "router.get('/dist-route', ()=>{});\n");
+  await writeFile(skipRepo, "node_modules/pkg/routes.js", "app.get('/nm', ()=>{});\n");
+  await writeFile(skipRepo, "coverage/lcov/x.js", "server.get('/cov', ()=>{});\n");
+  await writeFile(skipRepo, "build/out.js", "router.post('/b', ()=>{});\n");
+  run("git", ["add", "-A"], skipRepo);
+  run("git", ["commit", "-q", "-m", "initial"], skipRepo);
+  const skipFiles = listGitFiles(skipRepo);
+  const skipSurfaces = await detectSurfaces(skipRepo, skipFiles);
+  const skipSrcModules = skipSurfaces.filter((s) => s.kind === "src-module").map((s) => s.name);
+  assert(skipSrcModules.includes("keep"), "committed real src module is detected");
+  assert(
+    !skipSurfaces.some((s) => s.path.startsWith("dist/")),
+    "dist/ surfaces excluded"
+  );
+  assert(
+    !skipSurfaces.some((s) => s.path.startsWith("node_modules/")),
+    "node_modules/ surfaces excluded"
+  );
+  assert(
+    !skipSurfaces.some((s) => s.path.startsWith("coverage/")),
+    "coverage/ surfaces excluded"
+  );
+  assert(
+    !skipSurfaces.some((s) => s.path.startsWith("build/")),
+    "build/ surfaces excluded"
+  );
+
+  process.stderr.write("\nfileDeclaresRoute ignores commented-out routes\n");
+  const commentRepo = setupDirs("comment-route-repo");
+  run("git", ["init", "-q"], commentRepo);
+  run("git", ["config", "user.email", "test@example.com"], commentRepo);
+  run("git", ["config", "user.name", "test"], commentRepo);
+  run("git", ["config", "commit.gpgsign", "false"], commentRepo);
+  // File that ONLY declares a route inside a comment — should NOT be classified.
+  await writeFile(
+    commentRepo,
+    "src/demo/commented.js",
+    [
+      "// Example of what the route WOULD look like:",
+      "// app.get('/example', (req, res) => res.json({}));",
+      "/* router.post('/nope', () => {}); */",
+      "export function demo() { return 1; }",
+      "",
+    ].join("\n")
+  );
+  // Sanity companion: a real live route in the same repo to confirm detection still fires.
+  await writeFile(
+    commentRepo,
+    "src/real/live.js",
+    [
+      "import express from 'express';",
+      "const router = express.Router();",
+      "router.get('/live', (req, res) => res.json([]));",
+      "export default router;",
+      "",
+    ].join("\n")
+  );
+  run("git", ["add", "-A"], commentRepo);
+  run("git", ["commit", "-q", "-m", "initial"], commentRepo);
+  const commentFiles = listGitFiles(commentRepo);
+  const commentSurfaces = await detectSurfaces(commentRepo, commentFiles);
+  const commentRoutePaths = new Set(
+    commentSurfaces.filter((s) => s.kind === "route-file").map((s) => s.path)
+  );
+  assert(
+    !commentRoutePaths.has("src/demo/commented.js"),
+    "file with ONLY commented routes is NOT classified as a route file"
+  );
+  assert(
+    commentRoutePaths.has("src/real/live.js"),
+    "file with a live route IS still classified"
+  );
 
   if (fs.existsSync(TMP_BASE)) fs.rmSync(TMP_BASE, { recursive: true, force: true });
   if (failed > 0) {

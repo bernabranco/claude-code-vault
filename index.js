@@ -738,19 +738,28 @@ program
   )
   .option("--json", "Output as JSON (includes covered/mentioned/uncovered arrays) instead of markdown")
   .action(async (repoPath, options) => {
-    const vaultDir = program.opts().vault;
-    const vault = new Vault(vaultDir);
-    await vault.reindex();
-
-    const { analyzeGaps, formatMarkdown } = await import("./lib/gap-analyzer.js");
     const resolvedRepo = path.resolve(repoPath);
 
+    // Cheap existence + repo-shape checks BEFORE the vault reindex so users
+    // don't pay the reindex cost on a typo or a non-git directory.
     try {
       await fs.access(resolvedRepo);
     } catch {
       console.error(`✗ Repo path not found: ${resolvedRepo}`);
       process.exit(1);
     }
+    try {
+      await fs.access(path.join(resolvedRepo, ".git"));
+    } catch {
+      console.error(`✗ Not a git repository: ${resolvedRepo}`);
+      process.exit(1);
+    }
+
+    const vaultDir = program.opts().vault;
+    const vault = new Vault(vaultDir);
+    await vault.reindex();
+
+    const { analyzeGaps, formatMarkdown } = await import("./lib/gap-analyzer.js");
 
     let report;
     try {
