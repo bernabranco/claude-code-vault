@@ -2,175 +2,97 @@
 
 # claude-code-vault
 
-**A markdown knowledge vault designed for Claude.**
+**A markdown knowledge base that Claude Code can search, read, and write — via MCP.**
 
 [![npm version](https://img.shields.io/npm/v/claude-code-vault.svg)](https://www.npmjs.com/package/claude-code-vault)
 [![CI](https://github.com/bernabranco/claude-code-vault/actions/workflows/ci.yml/badge.svg)](https://github.com/bernabranco/claude-code-vault/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
-[![Node](https://img.shields.io/badge/node-%3E%3D20-brightgreen)](package.json)
 [![MCP](https://img.shields.io/badge/MCP-compatible-8A2BE2)](https://modelcontextprotocol.io)
-
-![Node.js](https://img.shields.io/badge/Node.js-339933?logo=node.js&logoColor=white)
-![SQLite](https://img.shields.io/badge/SQLite-003B57?logo=sqlite&logoColor=white)
-![Hugging Face](https://img.shields.io/badge/🤗%20Transformers.js-FFD21E?logoColor=black)
-![React](https://img.shields.io/badge/React-61DAFB?logo=react&logoColor=black)
-![TypeScript](https://img.shields.io/badge/TypeScript-3178C6?logo=typescript&logoColor=white)
 
 </div>
 
 ---
 
-Most PKM tools (Obsidian, Logseq, Notion) were built for humans writing notes; LLM features are bolted on as plugins. `claude-code-vault` starts from the other direction: **what would a knowledge base look like if an LLM agent was the primary consumer?**
+Claude Code is good at writing code but starts every session cold — no memory of decisions made, bugs already investigated, or patterns that matter in your repo. `claude-code-vault` gives it a persistent, searchable memory.
 
-The name points at the first-class integration (Claude Code + MCP), but the vault itself is plain markdown with YAML frontmatter and wiki-links. Any [MCP-compatible](https://modelcontextprotocol.io) client can load the same tool surface, and any agent that can read files can use the vault directly — no Claude required. This repo just ships the Claude Code wiring out of the box.
+You write notes in plain markdown. The vault exposes them to Claude as **8 MCP tools** — keyword search, semantic search, graph-aware context, and write-back. Claude finds relevant notes automatically rather than grepping files or asking you to repeat yourself.
 
-## Design principle: LLM-first documentation
-
-The bet: LLMs will be the primary executors of code-implementation tasks. If that's true, documentation should be optimized for **LLM consumption**, not human browsing. Human readability is a welcome side effect, not the goal.
-
-In practice that means:
-
-- **Explicit invariants over implied ones.** Say "`VAULT_DIR` env var wins" in a heading, not "usually you'd set the path." Retrievers anchor on explicit claims; implied knowledge doesn't chunk.
-- **Stable headings as addresses.** Chunks are retrieved by heading breadcrumb. Renaming a heading is a URL change — treat it that way.
-- **Cross-references an agent can follow.** Wiki-links (`[[claude-code-vault/gotchas/gotchas]]`) are deterministic lookups, not decorative. Every concept that matters gets its own note so another note can link to it.
-- **Frontmatter carries routing metadata.** `title`, `tags`, `description`, `date` — structured fields the indexer and retriever use, not styling for humans.
-- **One concept per note.** Longer notes dilute chunk relevance. If a section starts drifting into a second topic, split it and link.
-- **Gotchas are first-class.** Non-obvious traps belong in a dedicated `gotchas.md` so a retrieval on "why does X fail under Y" actually surfaces them.
-
-Every feature in the [roadmap](#roadmap) is evaluated against one question: *does this make it easier for an LLM to find and use the right context?* Nicer human UX is fine only when it doesn't cost LLM precision.
-
-Browse the self-docs vault at [`vault/claude-code-vault/`](vault/claude-code-vault/) — this project documents itself using its own tool, with ADRs, architecture notes, features, gotchas, and research all wiki-linked into a real graph. The vault doubles as a test fixture for the retrieval eval harness.
-
-> ⚠️ **Status: early, personal tool.** See the [roadmap](#roadmap) for what's built vs. planned.
+> ⚠️ **Status: early, active development.** MIT-licensed, source you can read.
 
 <p align="center">
-  <img src="assets/print2.jpg" alt="claude-code-vault web UI showing a force-directed graph of wiki-linked notes, with one note selected and its frontmatter displayed in the right sidebar" width="100%" />
+  <img src="assets/print2.jpg" alt="claude-code-vault web UI showing a force-directed graph of wiki-linked notes" width="100%" />
   <br />
-  <sub><em>The self-docs vault rendered as a graph — every wiki-link becomes an edge, every note a node. Click to read.</em></sub>
+  <sub><em>The self-docs vault as a graph — every wiki-link is an edge, every note a node.</em></sub>
 </p>
 
-## How it looks in practice
-
-Walk-through using the self-docs vault. Imagine you've just opened Claude Code in this repo and asked about the project.
-
-### "What's this project?"
-Claude calls `vault_read("claude-code-vault/overview")`. Gets the overview + wiki-links pointing at the ADRs, architecture, features, and research. Claude now knows where to look next — no grepping required.
-
-### "Why did we pick local embeddings over a remote API?"
-The query rephrases how the ADR is written. Claude calls `vault_semantic_search("why did we pick local DB")` → top hit is [`adr-001-local-first-embeddings`](vault/claude-code-vault/adrs/adr-001-local-first-embeddings.md), best-chunk heading `ADR-001 > Rationale`. **Meaning-based retrieval**, not substring matching.
-
-### "Where's the cache-filename-bump gotcha?"
-Claude doesn't want the whole [`gotchas.md`](vault/claude-code-vault/gotchas/gotchas.md) file — just the relevant paragraph. `vault_search_chunks("cache filename bump on schema changes")` returns the exact passage with breadcrumb `Gotchas > CREATE TABLE IF NOT EXISTS is a no-op on existing tables...`. ~50 tokens returned instead of the full file.
-
-### "Show me ADR-001 with its neighbors"
-`vault_read_with_context("claude-code-vault/adrs/adr-001-local-first-embeddings")` returns the ADR **plus** ranked graph neighbors — the embeddings pipeline, the gotchas note, the semantic-search feature — each with an intro snippet. One round-trip. Bidirectional edges first, then ranked by how many chunks reference them.
-
-Full tool list is below. `vault_list`, `vault_related`, `vault_search`, and `vault_search_chunks_with_context` round out the other four.
-
-## Structure
-
-```
-vault/
-├── README.md                   ← conventions doc
-├── claude-code-vault/          ← self-docs: this project's own knowledge base
-│   ├── VAULT_SUMMARY.md        ← index Claude reads first
-│   ├── overview.md
-│   ├── adrs/                   ← Architecture Decision Records
-│   ├── architecture/           ← system architecture notes
-│   ├── features/               ← user-facing feature specs
-│   ├── gotchas/                ← non-obvious traps, read before shipping
-│   └── research/               ← roadmap + open questions
-└── your-project/               ← (added by `claude-code-vault init`)
-    └── ...
-```
-
-One folder per project. Each project has a `VAULT_SUMMARY.md` that Claude reads as the index. Inside each project, notes are grouped **by type** — `adrs/`, `designs/`, `features/`, `gotchas/`, `research/`, `go-to-market/` — so an LLM looking for *"why did we decide X"* knows to check `adrs/` without guessing. Add or skip folders as your project needs; see [`vault/README.md`](vault/README.md) for the full convention.
-
-## Running locally
-
-The vault is just markdown — Claude reads files directly, no backend required for that. The backend + web UI are for *you* to browse.
-
-```bash
-# Install
-npm install
-cd web && npm install && cd ..
-
-# Run backend + UI — indexes ./vault in the current directory by default
-node lib/server.js                               # http://localhost:4001
-VAULT_DIR=./path/to/your/vault node lib/server.js   # point at any folder
-cd web && npm run dev                            # http://localhost:5173 (dev mode)
-```
-
-Run from the root of your repo (the one where `claude-code-vault init` created `vault/<your-project>/`) and the viewer picks it up automatically. Use `VAULT_DIR` to point at a vault elsewhere.
-
-<p align="center">
-  <img src="assets/print1.jpg" alt="Note reader view showing the vault conventions document, with folder tree on the left and rendered markdown in the middle" width="100%" />
-  <br />
-  <sub><em>Reader view — folder tree on the left, rendered markdown in the middle, frontmatter + tags on the right.</em></sub>
-</p>
-
-## Bootstrap a vault in any repo
+## Bootstrap in any repo
 
 ```bash
 npx claude-code-vault init [project-name]
 ```
 
-Defaults the project name to the current directory name. Creates:
+This creates:
+- `vault/<project>/` — folder structure (`adrs/`, `features/`, `gotchas/`, `research/`) with a stub `VAULT_SUMMARY.md`
+- `.mcp.json` — wires Claude Code to the vault's MCP server
+- `.gitignore` entry for `.vault-cache/` (local embeddings DB)
 
-- `vault/<project>/` with type-first folder structure (`adrs/`, `designs/`, `features/`, `gotchas/`, `research/`, `go-to-market/`) and stub `VAULT_SUMMARY.md` + `overview.md`
-- `.mcp.json` at repo root wiring Claude Code to the vault's MCP server (uses `npx claude-code-vault mcp` with `VAULT_DIR=./vault`)
-- `.vault-cache/` entry in `.gitignore` so the local embeddings DB isn't committed
+Restart Claude Code in the directory and the vault tools are available. Idempotent — safe to re-run.
 
-Idempotent: re-running skips existing files. After it finishes, restart Claude Code in the directory to load the vault tools.
+## What Claude can do with the vault
 
-## MCP server (Claude Code integration)
+| Tool | What it does |
+|---|---|
+| `vault_search` | Keyword search across titles, tags, and body |
+| `vault_semantic_search` | Meaning-based search — finds relevant notes even with different wording |
+| `vault_search_chunks` | Returns the specific paragraph that answers the query, not the whole file |
+| `vault_read` | Full note content by ID |
+| `vault_read_with_context` | Note + ranked wiki-link neighbors in one round-trip |
+| `vault_search_chunks_with_context` | Chunk search + graph neighbors of the matched notes |
+| `vault_list` | List notes, optionally filtered by tag |
+| `vault_related` | 1-hop graph neighbors (backlinks + forward links) |
 
-`.mcp.json` is committed at the repo root, so any Claude Code session started from this directory picks it up after `npm install`. Restart Claude Code and eight vault tools become available:
+Search tools return a `{ results, truncated }` envelope with a `maxChars` budget (default 8000 chars). The top result is always returned even if it alone exceeds the budget.
 
-- `vault_search` — keyword matching (title/tag/id/body, with metadata weighted above body)
-- `vault_semantic_search` — meaning-based, note-level (best-chunk aggregation)
-- `vault_search_chunks` — meaning-based, paragraph/section-level (returns chunk text + heading breadcrumb)
-- `vault_read` — full note content by id
-- `vault_read_with_context` — note + ranked graph neighbors with snippets (one round-trip)
-- `vault_search_chunks_with_context` — chunk search + graph neighbors of the notes hit
-- `vault_list` — list notes, optionally filtered by tag
-- `vault_related` — 1-hop graph neighbors (backlinks + forward links, IDs only)
+Embeddings run **locally** via `@huggingface/transformers` + `sqlite-vec` — no API key, no cloud. First startup downloads ~22 MB of model weights; subsequent runs only re-embed changed notes.
 
-Vault location defaults to `./vault`; override with `VAULT_DIR` in `.mcp.json` if needed.
+## Write-back
 
-### Response envelope + char budget
+Claude can add and update notes directly:
 
-The four search/list tools — `vault_search`, `vault_list`, `vault_semantic_search`, `vault_search_chunks` — return a `{ results, truncated }` envelope. Each accepts an optional `maxChars` parameter (default **8000** ≈ 2000 tokens); lower-ranked results are dropped from the bottom to fit. `truncated: true` means at least one result was dropped. The top-ranked item is always returned even if it alone exceeds the budget, so a non-empty search never yields an empty response. The `*_with_context` tools share the `maxChars` budget and `truncated` flag; their top-level envelope shape differs (domain-specific keys like `chunks`, `neighbors`, `note`).
+| Tool | What it does |
+|---|---|
+| `vault_create_note` | Create a new note with schema validation |
+| `vault_write` | Overwrite a note |
+| `vault_append_section` | Add content under a heading |
+| `vault_replace_section` | Replace content under a heading |
+| `vault_lint` | Run the linter and return findings |
 
-### Semantic search + chunk retrieval
+## Vault structure
 
-Embeddings run locally via `@huggingface/transformers` + `sqlite-vec` — no API key, no cloud. Notes are chunked on markdown heading boundaries (a chunk = text under one heading, bounded to 100–1500 chars with paragraph-level splitting for oversized sections). Each chunk carries a heading breadcrumb (`# Title > ## Section > ### Subsection`) and any wiki-links it contains. First startup downloads ~22MB of ONNX model weights to `.vault-cache/`; subsequent runs only re-embed notes whose `lastModified` changed.
-
-```bash
-# Note-level results (best chunk aggregated per note)
-node index.js semantic-search "why SQLite over cloud DB" --limit 3
-
-# Chunk-level results (return just the relevant passages)
-node index.js search-chunks "tab throttling" --limit 5
-node index.js search-chunks "..." --json   # for scripting
+```
+vault/
+└── <project>/
+    ├── VAULT_SUMMARY.md    ← Claude reads this first as the index
+    ├── overview.md
+    ├── adrs/               ← Architecture Decision Records
+    ├── features/           ← feature specs
+    ├── gotchas/            ← non-obvious traps
+    └── research/           ← open questions, exploration
 ```
 
-### Graph-aware context
+Notes use YAML frontmatter (`title`, `tags`, `description`, `date`, `status`, `type`). Wiki-links (`[[other-note]]`) form a graph that the `*_with_context` tools traverse. Notes with `status: deprecated` are excluded from retrieval; `status: stale` are downranked.
 
-Wiki-links form a graph. Fetching a note usually means also wanting its neighbors — forward links (notes it points to) and backlinks (notes that point to it). The `*_with_context` tools return both in one round-trip.
+## Hooks (optional)
 
-Neighbors are ranked: **bidirectional** (A ↔ B) first, then by **link frequency** (how many chunks actually reference the edge, using the per-chunk `links` array captured during chunking), then by **recency** (`lastModified`), then alphabetically. Each neighbor comes with its intro snippet (the `chunk_idx=0` chunk). A `maxChars` budget caps total snippet bytes — if we run out of room, lower-ranked neighbors are dropped and `truncated: true` is set.
+Three Claude Code hooks ship with the package to reinforce vault use:
 
-```bash
-node index.js read-with-context claude-code-vault/adrs/adr-001-local-first-embeddings
-node index.js search-with-context "tab throttling" --limit 3 --depth 2
-```
+**Vault-first reminder** — on the first Grep or Glob per session, emits a one-time nudge to try `vault_semantic_search` first. Never blocks.
 
-## Vault-first hook (optional)
+**Subagent gate** — blocks subagent spawns if no `vault_*` tool was called in the last 20 tool uses. Subagents start cold; vault context should come before them.
 
-Tool descriptions nudge agents to reach for the vault before Grep/Read, but they're advisory — an agent habituated to filesystem search can still skip the vault. A PreToolUse hook makes the nudge guaranteed.
+**End-of-session gap report** — if the session edited ≥ 3 files but called zero vault tools, prints a reminder to `vault_create_note` on the way out. Visible to you, not injected into the model.
 
-Wire it into `.claude/settings.json`:
+Wire them in `.claude/settings.json`:
 
 ```json
 {
@@ -178,150 +100,65 @@ Wire it into `.claude/settings.json`:
     "PreToolUse": [
       {
         "matcher": "Grep|Glob",
-        "hooks": [{
-          "type": "command",
-          "command": "node ${CLAUDE_PROJECT_DIR}/node_modules/claude-code-vault/hooks/vault-first-reminder.mjs"
-        }]
-      }
-    ]
-  }
-}
-```
-
-On the **first** Grep or Glob per session, the hook emits a reminder with `vault_semantic_search` pre-formulated from the search pattern. Every subsequent Grep/Glob is silent — this is a once-per-session nudge, not a gate. Never blocks the underlying tool. State lives under the OS temp dir at `claude-code-vault-hook-state/<session_id>.seen` (sanitized). To disable, export `CLAUDE_VAULT_HOOK_DISABLE=1` in the shell Claude Code inherits.
-
-### Subagent gate (stronger enforcement)
-
-A second hook **blocks** subagent spawns when no `vault_*` tool has been called in the recent conversation. Subagents don't inherit CLAUDE.md and start cold, so spawning without vault context usually wastes tokens re-deriving what's already documented.
-
-```json
-{
-  "hooks": {
-    "PreToolUse": [
+        "hooks": [{ "type": "command", "command": "node ${CLAUDE_PROJECT_DIR}/node_modules/claude-code-vault/hooks/vault-first-reminder.mjs" }]
+      },
       {
         "matcher": "Agent|Task",
-        "hooks": [{
-          "type": "command",
-          "command": "node ${CLAUDE_PROJECT_DIR}/node_modules/claude-code-vault/hooks/vault-first-subagent.mjs"
-        }]
+        "hooks": [{ "type": "command", "command": "node ${CLAUDE_PROJECT_DIR}/node_modules/claude-code-vault/hooks/vault-first-subagent.mjs" }]
       }
-    ]
+    ],
+    "SessionEnd": [{ "hooks": [{ "type": "command", "command": "node ${CLAUDE_PROJECT_DIR}/node_modules/claude-code-vault/hooks/vault-gap-report.mjs" }] }]
   }
 }
 ```
 
-The hook reads the last ~256 KB of Claude Code's transcript, scans the last 20 tool uses (override with `CLAUDE_VAULT_SUBAGENT_LOOKBACK=N`), and allows the spawn if any `vault_*` tool appears. Otherwise it denies with a reason suggesting the vault query pre-formulated from the subagent's task description. Fails open on any error — missing transcript, parse failure, etc. — so a broken hook can never brick your workflow. Disable with `CLAUDE_VAULT_HOOK_DISABLE=1` (same env var as the Grep/Glob nudge).
+Disable all hooks with `CLAUDE_VAULT_HOOK_DISABLE=1`.
 
-### End-of-session gap report
+## Web UI (optional)
 
-A third hook closes the write-loop. At session end, it scans the transcript and flags sessions that edited multiple files but never queried the vault — the signal that the next agent will re-derive whatever was just learned.
+Browse the vault in a browser — force-directed graph + note reader + lint panel.
 
-```json
-{
-  "hooks": {
-    "SessionEnd": [{
-      "hooks": [{
-        "type": "command",
-        "command": "node ${CLAUDE_PROJECT_DIR}/node_modules/claude-code-vault/hooks/vault-gap-report.mjs"
-      }]
-    }]
-  }
-}
+```bash
+npm install
+node lib/server.js          # http://localhost:4001
+cd web && npm run dev       # http://localhost:5173
 ```
 
-If the session edited ≥ `CLAUDE_VAULT_GAP_THRESHOLD` (default 3) distinct files AND called zero `vault_*` tools, the hook prints a concise report to stderr (visible to the user, NOT injected into the model) suggesting `vault_create_note` on the way out. Silent otherwise. Never blocks.
+<p align="center">
+  <img src="assets/print1.jpg" alt="Note reader view — folder tree, rendered markdown, frontmatter sidebar" width="100%" />
+  <br />
+  <sub><em>Reader view — folder tree, rendered markdown, frontmatter on the right.</em></sub>
+</p>
+
+## CLI
+
+```bash
+node index.js semantic-search "why SQLite over cloud DB" --limit 3
+node index.js search-chunks "tab throttling" --limit 5
+node index.js lint              # exits 1 on errors
+node index.js index             # re-index vault
+```
 
 ## Roadmap
 
-Full roadmap tracker: **[#33 — LLM-first documentation](https://github.com/bernabranco/claude-code-vault/issues/33)**.
+- [x] MCP server with 8 vault tools
+- [x] Semantic search + chunk-level retrieval (local embeddings, no API key)
+- [x] Graph-aware context (`*_with_context` tools)
+- [x] `claude-code-vault init` bootstrap
+- [x] Write-back tools (`vault_write`, `vault_create_note`, section edit)
+- [x] Vault linter (`vault_lint` + CLI)
+- [x] Hooks (vault-first reminder, subagent gate, gap report)
+- [x] HyDE query expansion, status-aware retrieval, char budgets
+- [x] Retrieval eval harness with CI gate
+- [ ] Hybrid search (keyword + semantic via RRF)
+- [ ] Reranker (cross-encoder pass over top-K)
+- [ ] Federated search across multiple projects
 
-### Shipped
-
-- [x] **MCP server** — vault exposed as MCP tools so Claude Code queries the vault natively instead of grepping files
-- [x] **Semantic search** — local embeddings via `@huggingface/transformers` + `sqlite-vec`
-- [x] **Chunk-level retrieval** — return the most relevant paragraphs with heading breadcrumbs, not whole files
-- [x] **Graph-aware context** — `vault_read_with_context` and `vault_search_chunks_with_context` return ranked neighbors with snippets
-- [x] **`claude-code-vault init`** — one command bootstraps a vault, `.mcp.json`, and `.gitignore` in any repo
-- [x] **[npm published](https://www.npmjs.com/package/claude-code-vault)** — install via `npx claude-code-vault init`
-
-### Phase 1 — Retrieval precision
-
-Infra-only changes that improve what agents get back from a query. No content migration required.
-
-- [x] **[Retrieval eval harness](https://github.com/bernabranco/claude-code-vault/issues/15)** — gold query→passage dataset + recall@k regression test. *Prerequisite for everything else in Phase 1.*
-- [ ] **[Hybrid search](https://github.com/bernabranco/claude-code-vault/issues/4)** — fuse keyword + semantic scores via RRF
-- [ ] **[Reranker](https://github.com/bernabranco/claude-code-vault/issues/5)** — cross-encoder pass over top-K for precision
-- [x] **[HyDE query expansion](https://github.com/bernabranco/claude-code-vault/issues/16)** — embed a hypothetical answer instead of the raw query. See [docs/hyde.md](docs/hyde.md).
-- [x] **[Filter-before-rank](https://github.com/bernabranco/claude-code-vault/issues/17)** — scope semantic search by tag / folder / date / type
-
-### Phase 2 — Provenance + content quality
-
-Frontmatter additions + linter so agents can trust what they read.
-
-- [x] **[Frontmatter schema extension](https://github.com/bernabranco/claude-code-vault/issues/18)** — `status`, `lastVerified`, `summary`, `type`
-- [x] **[Vault content linter](https://github.com/bernabranco/claude-code-vault/issues/19)** — `claude-code-vault lint` (text/JSON/GitHub formats). Dead links, missing frontmatter, orphans, heading skips, oversize/undersize, duplicate candidates, stale dates, unknown enums. Also exposed as the `vault_lint` MCP tool.
-- [x] **[Typed-note schemas](https://github.com/bernabranco/claude-code-vault/issues/20)** — ADR / feature / gotcha / runbook / glossary with required fields; `add --type <t>` CLI scaffolds
-- [x] **[Status-aware retrieval](https://github.com/bernabranco/claude-code-vault/issues/21)** — downrank stale (× `staleWeight`, default 0.7), exclude deprecated by default
-
-### Phase 3 — Write-back (LLMs as authors, not just readers)
-
-Today the vault is read-only from Claude's POV. This phase closes that gap.
-
-- [x] **[`vault_write` + `vault_create_note`](https://github.com/bernabranco/claude-code-vault/issues/22)** — MCP tools with schema enforcement, atomic tmp+rename, unresolved-link validation
-- [x] **[Section-level edit](https://github.com/bernabranco/claude-code-vault/issues/23)** — `vault_append_section` / `vault_replace_section`; strict heading-path matching with near-miss suggestions
-- [x] **[Stub creation + auto-link suggestions](https://github.com/bernabranco/claude-code-vault/issues/24)** — write tools auto-stub unresolved `[[targets]]` (opt-in) and surface `suggestedLinks` from known titles + glossary terms
-
-### Phase 4 — Coverage + evaluation
-
-Know what's missing from the vault; keep it missing less.
-
-- [x] **[Query-miss log](https://github.com/bernabranco/claude-code-vault/issues/25)** — opt-in via `VAULT_QUERY_LOG=1`; `claude-code-vault query-log --misses` surfaces zero-result + low-score queries
-- [x] **[Repo → vault gap report](https://github.com/bernabranco/claude-code-vault/issues/26)** — `vault gap <repo>` classifies surfaces as covered / mentioned / uncovered via `git ls-files`
-- [x] **[Retrieval eval CI gate](https://github.com/bernabranco/claude-code-vault/issues/28)** — warn/fail tiers (`--gate 2 --warn-gate 0.5`); regressions annotate PR via `::warning`
-- [ ] **[Contradiction detector](https://github.com/bernabranco/claude-code-vault/issues/27)** — ~~flag semantically-overlapping notes with opposing claims~~ _closed wontfix: noisy heuristic; covered ~80% by stale-date linter + status-aware retrieval_
-
-### Phase 5 — Ergonomics + multi-project
-
-Polish after the core is solid.
-
-- [x] **[Char budgets across search tools](https://github.com/bernabranco/claude-code-vault/issues/30)** — every search tool bounds its response (`maxChars`, default 8000); returns `{results, truncated}` envelope
-- [x] **[Shared glossary resolution](https://github.com/bernabranco/claude-code-vault/issues/31)** — `type: glossary` notes auto-resolve bare jargon mentions on `vault_read`; demo at `vault/shared/glossary/rag-terms.md`
-- [ ] **[`vault_tour` + `vault_outline`](https://github.com/bernabranco/claude-code-vault/issues/29)** — cheap orientation tools for fresh sessions
-- [ ] **[Federated search across projects](https://github.com/bernabranco/claude-code-vault/issues/32)** — project-scoped retrieval
-
-### Other
-
-- [ ] **[Public launch polish](https://github.com/bernabranco/claude-code-vault/issues/3)** — demo GIF, examples, comparison screenshots
-- [ ] **[Issue/PR templates](https://github.com/bernabranco/claude-code-vault/issues/6)** — `.github/` scaffolding
-
-## Evaluation
-
-Retrieval changes (semantic search, chunk search, HyDE, filters) are gated by an eval harness — `test/retrieval/eval.js` — that runs a hand-authored gold dataset through every search tool and reports `recall@5` and `MRR@5`. CI fails when a tool's recall@5 drops by ≥ **2pp** vs the committed baseline, and annotates the PR as a warning for drops in `[0.5pp, 2pp)`.
-
-```bash
-# Run the harness against the current code
-npm run eval
-
-# Update the baseline after an intentional improvement
-npm run eval:bless
-
-# Custom regression gate (defaults: --gate 2 --warn-gate 0.5)
-node test/retrieval/eval.js --gate 3 --warn-gate 1
-
-# Measure HyDE lift (needs ANTHROPIC_API_KEY; falls back to raw query without)
-node test/retrieval/eval.js --hyde
-
-# Machine-readable output
-node test/retrieval/eval.js --json
-```
-
-The dataset (`test/retrieval/gold.json`) is hand-authored and tagged by category (`keyword-only`, `semantic-only`, `vocabulary-gap`, `graph-context`, `multi-section`, `filter-scope`) so a regression in one category is visible even when the overall number looks fine. Add new entries when shipping a note whose retrieval is non-obvious; never delete entries to make a metric look better.
-
-Deep-dives on individual retrieval techniques live under [docs/](docs/) — see [docs/hyde.md](docs/hyde.md) for how query expansion works and when to enable it.
+Full tracker: [#33](https://github.com/bernabranco/claude-code-vault/issues/33).
 
 ## Contributing
 
-PRs welcome — see [CONTRIBUTING.md](CONTRIBUTING.md) for dev setup, the pre-PR CI checks, and workflow conventions. All contributors agree to the [Code of Conduct](CODE_OF_CONDUCT.md).
+PRs welcome. See [CONTRIBUTING.md](CONTRIBUTING.md) for dev setup and workflow. All contributors agree to the [Code of Conduct](CODE_OF_CONDUCT.md).
 
 ## License
 
